@@ -7,7 +7,7 @@
         ".history/*": true,
         "**/.git": false,
         "**/.history": true,
-        "${workspaceFolder}/build*": true
+        "${workspaceFolder}/build/*": true
     },
     "files.associations": {
         "array": "cpp",
@@ -65,5 +65,8 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp"
+    },
+    "search.exclude": {
+        "${workspaceFolder}/build/*": true
     }
 }

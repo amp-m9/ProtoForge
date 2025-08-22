@@ -9,15 +9,15 @@
 			"detail": "CMake template configure task"
 		},
 		{
-			"label": "Move Assets",
+			"label": "Sync Assets",
 			"type": "shell",
-			"command": "mkdir -p build && cp -R -u -p src/assets build/assets" // only copy updated
+			"command": "rsync -avu --delete src/assets build"
 		},
 		{
 			"label": "Build and Move Assets",
 			"dependsOn": [
 				"CMake: build",
-				"Move Assets"
+				"Sync Assets"
 			],
 			"dependsOrder": "sequence",
 			"type": "shell",
