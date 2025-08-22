@@ -1,0 +1,27 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cmake",
+			"label": "CMake: configure",
+			"command": "configure",
+			"problemMatcher": [],
+			"detail": "CMake template configure task"
+		},
+		{
+			"label": "Move Assets",
+			"type": "shell",
+			"command": "mkdir -p build && cp -R -u -p src/assets build/assets" // only copy updated
+		},
+		{
+			"label": "Build and Move Assets",
+			"dependsOn": [
+				"CMake: build",
+				"Move Assets"
+			],
+			"dependsOrder": "sequence",
+			"type": "shell",
+			"command": "echo All done"
+		}
+	]
+}

@@ -1,0 +1,19 @@
+# Use LLVM style as base
+BasedOnStyle: LLVM
+
+# Indentation
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+# Do not reorder #includes
+IncludeBlocks: Preserve
+SortIncludes: false
+
+# Brace and line settings
+BreakBeforeBraces: Allman
+AllowShortFunctionsOnASingleLine: Inline
+ColumnLimit: 150
+
+# Pointer and reference alignment
+PointerAlignment: Left

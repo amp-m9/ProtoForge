@@ -1,0 +1,14 @@
+CompileFlags:
+  # Extra flags added to every compile command
+  Add: [-Wall, -Wextra, -std=c++20]
+
+Index:
+  Background: Yes         # Build index in the background
+  StandardLibrary: Yes    # Index standard library headers
+
+Diagnostics:
+  ClangTidy:
+    Add: [performance-*, readability-*]  # enable useful clang-tidy checks
+
+InlayHints:
+  Enabled: Yes            # inline parameter/type hints
