@@ -1,0 +1,2 @@
+#pragma once
+static const char* logl_root = "@LOGL_ROOT@";

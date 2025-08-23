@@ -1,13 +1,15 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
-#include "include/Utils.h"
-#include "include/Shader.h"
+#include <stb_image.h>
+#include <assert.h>
+#include "Utils.h"
+#include "Shader.h"
+#include "filesystem.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-    glViewport(0, 0, width,
-               height); // lower left corner followed by w*h
+    glViewport(0, 0, width, height); // lower left corner followed by w*h
 }
 
 void processInput(GLFWwindow* window)
@@ -49,11 +51,14 @@ int main()
     Shader CMYKShader("assets/shaders/CMYKSquare.vs", "assets/shaders/CMYKSquare.fs");
 
     float vertices[] = {
-        // Positions        // Colours
-        0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom right
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom left
-        0.0f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f  // top
+        // Positions         // Colours       // Texture coords
+        0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom right
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, // bottom left
+        0.5f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // top right
+        -0.5f, 0.5f,  0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f  // top left
     };
+
+    uint indices[] = {0, 1, 2, 1, 2, 3};
 
     unsigned int VertexBufferObject, VertexArrayObject, ElementBufferObject;
     glGenVertexArrays(1, &VertexArrayObject);
@@ -65,26 +70,95 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, VertexBufferObject);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    // Positions
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    // Colors
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards
-    // we can safely unbind
+    // Load texture
+    int width, height, nrChannels;
+    std::string fileLoc = FileSystem::getPath("assets/textures/wooden_container.jpg").c_str();
+    unsigned char* TextureData = stbi_load(fileLoc.c_str(), &width, &height, &nrChannels, 0);
+
+    assert(TextureData);
+    unsigned int CrateTextureID;
+    glGenTextures(1, &CrateTextureID);
+    glBindTexture(GL_TEXTURE_2D, CrateTextureID);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, TextureData);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    fileLoc = FileSystem::getPath("assets/textures/awesomeface.png").c_str();
+    stbi_set_flip_vertically_on_load(true);
+    TextureData = stbi_load(fileLoc.c_str(), &width, &height, &nrChannels, 0);
+
+    assert(TextureData);
+    unsigned int FaceTextureID;
+    glGenTextures(1, &FaceTextureID);
+    glBindTexture(GL_TEXTURE_2D, FaceTextureID);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, TextureData);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glGenBuffers(1, &ElementBufferObject);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ElementBufferObject);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so
+    // afterwards we can safely unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    CMYKShader.Use();
+    CMYKShader.setInt("texture1", 0);
+    CMYKShader.setInt("texture2", 1);
+
+    float mix = 0.0f;
+    bool bIncreasing = true;
     while (!glfwWindowShouldClose(window))
     {
+        mix += (!bIncreasing ? -1 : 1) * 0.02;
+        if (mix > 1)
+        {
+            mix = 1;
+            bIncreasing = !bIncreasing;
+        }
+        else if (mix < 0)
+        {
+            mix = 0;
+            bIncreasing = !bIncreasing;
+        }
         processInput(window);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         CMYKShader.Use();
-        glBindVertexArray(VertexArrayObject);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        CMYKShader.setFloat("mixValue", mix);
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, CrateTextureID);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, FaceTextureID);
+
+        glBindVertexArray(VertexArrayObject);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        // glDrawArrays(GL_TRIANGLES, 0, 3);
         // glBindVertexArray(0);
 
         glfwSwapBuffers(window);

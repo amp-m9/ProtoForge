@@ -3,14 +3,15 @@
 #include <sstream>
 #include <iostream>
 #include <assert.h>
+#include <filesystem.h>
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath)
 {
     std::string VertexCode, FragmentCode;
     bool bSuccessfulLoad = true;
 
-    bSuccessfulLoad &= LoadShaderFileAtPath(vertexPath, VertexCode);
-    bSuccessfulLoad &= LoadShaderFileAtPath(fragmentPath, FragmentCode);
+    bSuccessfulLoad &= LoadShaderFileAtPath(FileSystem::getPath(vertexPath).c_str(), VertexCode);
+    bSuccessfulLoad &= LoadShaderFileAtPath(FileSystem::getPath(fragmentPath).c_str(), FragmentCode);
     assert(bSuccessfulLoad);
 
     const char* VertexCodeCharArray = VertexCode.c_str();
