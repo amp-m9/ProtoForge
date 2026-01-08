@@ -1,0 +1,5 @@
+EXTERNAL_LIBS=D:\Libs // EXTERNAL_LIBS Location with Glad and glfw
+GROUPED_LIBS=TRUE // used if all in same place (see above)
+
+GLAD_LIB // location of .../glad/include
+GLFW_LIB // location of .../glfw-3.4/include

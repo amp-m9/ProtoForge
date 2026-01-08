@@ -11,6 +11,9 @@
 		{
 			"label": "Sync Assets",
 			"type": "shell",
+			"windows": {
+				"command": "wsl rsync -avu --delete src/assets build"
+			},
 			"command": "rsync -avu --delete src/assets build"
 		},
 		{
@@ -21,7 +24,12 @@
 			],
 			"dependsOrder": "sequence",
 			"type": "shell",
-			"command": "echo All done"
+			"command": "echo All done",
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
 		}
 	]
 }

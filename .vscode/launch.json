@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug main",
+            "name": "Linux: Debug main",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/build/LearnOpenGL",
@@ -22,7 +22,20 @@
                 }
             ],
             "preLaunchTask": "Build and Move Assets",
-            "miDebuggerPath": "/usr/bin/gdb"
+            "linux": {
+                "miDebuggerPath": "/usr/bin/gdb"
+            },
+        },
+        {
+            "name": "Win: Debug main",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/build/Debug/LearnOpenGL.exe",
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": false,
+            "preLaunchTask": "Build and Move Assets",
         }
     ]
 }
