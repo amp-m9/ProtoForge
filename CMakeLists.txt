@@ -1,5 +1,8 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.11)
+
+include(FetchContent)
 include(CMakePrintHelpers)
+
 project(LearnOpenGL)
 
 file(STRINGS CMakeVariables.txt ConfigContents)
@@ -19,10 +22,25 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(DCMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(LOGL_ROOT "${CMAKE_BINARY_DIR}")
+if(GROUPED_LIBS)
+    cmake_print_variables(${GROUPED_LIBS})
+    set(GLAD_LIB ${EXTERNAL_LIBS}/glad)
+    set(GLFW_LIB ${EXTERNAL_LIBS}/glfw)    
+    cmake_print_variables(${GLAD_LIB} ${GLFW_LIB})
+endif(GROUPED_LIBS)
+
 file(GLOB LIB_SOURCES "${CMAKE_SOURCE_DIR}/src/lib/*.cpp")
 
-add_subdirectory(../../Libs/glfw-3.4 build_glfw)
+add_subdirectory ( ${GLFW_LIB} mbuild_glfw)
 find_package(OpenGL REQUIRED)
+
+FetchContent_Declare(
+	glm
+	GIT_REPOSITORY	https://github.com/g-truc/glm.git
+	GIT_TAG 	8d1fd52 #refs/tags/1.0.3
+)
+
+FetchContent_MakeAvailable(glm)
 
 add_executable(${PROJECT_NAME} src/main.cpp ${EXTERNAL_LIBS}/glad/src/glad.c ${LIB_SOURCES})
 
@@ -38,19 +56,13 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE
         glfw
         OpenGL::GL
+        glm::glm
 )
-
-if(GROUPED_LIBS)
-    cmake_print_variables(${GROUPED_LIBS})
-    set(GLAD_LIB ${EXTERNAL_LIBS}/glad/include)
-    set(GLFW_LIB ${EXTERNAL_LIBS}/glfw-3.4/include)    
-    cmake_print_variables(${GLAD_LIB} ${GLFW_LIB})
-endif(GROUPED_LIBS)
 
 target_include_directories(${PROJECT_NAME} 
     PRIVATE
-        ${GLAD_LIB}
-        ${GLFW_LIB}  
+        ${GLAD_LIB}/include
+        ${GLFW_LIB}/include
         ${CMAKE_SOURCE_DIR}/src/include
         ${CMAKE_SOURCE_DIR}/cmake
         ${CMAKE_BINARY_DIR}/generated
