@@ -68,5 +68,6 @@
     },
     "search.exclude": {
         "${workspaceFolder}/build/*": true
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

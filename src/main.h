@@ -1,0 +1,1 @@
+bool LoadTexture(const char* fileLocation, unsigned int& FaceTextureID, const bool bUseAlpha = false, const bool bFlipVerticallyOnLoad = false);
