@@ -12,6 +12,9 @@
 #include "filesystem.h"
 #include "main.h"
 
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height); // lower left corner followed by w*h
@@ -33,7 +36,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -53,7 +56,7 @@ int main()
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    Shader CMYKShader("assets/shaders/TransformShader/TransformShader.vs", "assets/shaders/TransformShader/TransformShader.fs");
+    Shader Shader_Going3D("assets/shaders/Coordinates_01/going3D.vs", "assets/shaders/Coordinates_01/going3D.fs");
 
     float vertices[] = {
         // Positions         // Texture coords
@@ -82,7 +85,7 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    // Load texture
+    // Load textures
     unsigned int FaceTextureID, CrateTextureID;
     LoadTexture("assets/textures/wooden_container.jpg", CrateTextureID, false, true);
     LoadTexture("assets/textures/awesomeface.png", FaceTextureID, true);
@@ -96,28 +99,31 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    CMYKShader.Use();
-    CMYKShader.setInt("texture1", 0);
-    CMYKShader.setInt("texture2", 1);
-    CMYKShader.setFloat("blend", 0.2);
+    Shader_Going3D.use();
+    Shader_Going3D.setInt("texture1", 0);
+    Shader_Going3D.setInt("texture2", 1);
+    Shader_Going3D.setFloat("blend", 0.2);
+
+    // rotate about x axis.
+    glm::mat4 Model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+    glm::mat4 View = glm::mat4(1.0f);
+    glm::mat4 Projection = glm::mat4(1.0f);
+    Model = glm::rotate(Model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    View = glm::translate(View, glm::vec3(0.0f, 0.0f, -3.0f));
+    Projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
     glm::mat4 Transform1 = glm::mat4(1.0f);
     Transform1 = glm::rotate(Transform1, glm::radians((float)glfwGetTime()), glm::vec3(0.0, 0.0, 1.0));
     Transform1 = glm::scale(Transform1, glm::vec3(0.5, 0.5, 0.5));
 
-    glm::mat4 Transform2 = glm::mat4(1.0f);
+    Shader_Going3D.setMat4("projection", Projection);
+    Shader_Going3D.setMat4("model", Model);
+    Shader_Going3D.setMat4("view", View);
 
-    unsigned int TransformLocation = glGetUniformLocation(CMYKShader.ID, "transform");
-    glUniformMatrix4fv(TransformLocation, 1, GL_FALSE, glm::value_ptr(Transform1));
     float Delta = 0.f;
     float LastTime = glfwGetTime();
 
     // Set Active Textures for draw calls, usually done in loop if plannig to change em (i think?)
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, CrateTextureID);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, FaceTextureID);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -128,19 +134,18 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        CMYKShader.Use();
-        Transform1 = glm::rotate(Transform1, Delta, glm::vec3(0.0, 0.0, 1.0));
-        glUniformMatrix4fv(TransformLocation, 1, GL_FALSE, glm::value_ptr(Transform1));
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, CrateTextureID);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, FaceTextureID);
+
+        Shader_Going3D.use();
 
         glBindVertexArray(VertexArrayObject);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-        Transform2 = glm::translate(glm::mat4(1.0f), glm::vec3(-.5, .5, 0));
-        Transform2 = glm::scale(Transform2, glm::vec3(sin(glfwGetTime())));
-        glUniformMatrix4fv(TransformLocation, 1, GL_FALSE, glm::value_ptr(Transform2));
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
         glfwSwapBuffers(window);
+        glfwPollEvents();
         glfwPollEvents();
     }
 
@@ -174,6 +179,7 @@ bool LoadTexture(const char* fileLocation, unsigned int& TextureID, const bool b
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // actually loads the texture data
+
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, bUseAlpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, TextureData);
     glGenerateMipmap(GL_TEXTURE_2D);
 
