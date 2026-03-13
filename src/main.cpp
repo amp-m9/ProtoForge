@@ -57,14 +57,17 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     Shader Shader_Going3D("assets/shaders/Coordinates_01/going3D.vs", "assets/shaders/Coordinates_01/going3D.fs");
+    int arrLen = sizeof(CubeVertices) / sizeof(CubeVertices[0]);
+    float vertices[arrLen];
+    for (int i = 0; i < arrLen; ++i)
+    {
+        vertices[i] = CubeVertices[i];
+    }
 
-    float vertices[] = {
-        // Positions         // Texture coords
-        0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, // bottom right
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // bottom left
-        0.5f,  0.5f,  0.0f, 1.0f, 1.0f, // top right
-        -0.5f, 0.5f,  0.0f, 0.0f, 1.0f  // top left
-    };
+    glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),     glm::vec3(2.0f, 5.0f, -15.0f), glm::vec3(-1.5f, -2.2f, -2.5f),
+                                 glm::vec3(-3.8f, -2.0f, -12.3f), glm::vec3(2.4f, -0.4f, -3.5f), glm::vec3(-1.7f, 3.0f, -7.5f),
+                                 glm::vec3(1.3f, -2.0f, -2.5f),   glm::vec3(1.5f, 2.0f, -2.5f),  glm::vec3(1.5f, 0.2f, -1.5f),
+                                 glm::vec3(-1.3f, 1.0f, -1.5f)};
 
     unsigned int indices[] = {0, 1, 2, 1, 2, 3};
 
@@ -105,25 +108,28 @@ int main()
     Shader_Going3D.setFloat("blend", 0.2);
 
     // rotate about x axis.
-    glm::mat4 Model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-    glm::mat4 View = glm::mat4(1.0f);
     glm::mat4 Projection = glm::mat4(1.0f);
-    Model = glm::rotate(Model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    View = glm::translate(View, glm::vec3(0.0f, 0.0f, -3.0f));
     Projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-    glm::mat4 Transform1 = glm::mat4(1.0f);
-    Transform1 = glm::rotate(Transform1, glm::radians((float)glfwGetTime()), glm::vec3(0.0, 0.0, 1.0));
-    Transform1 = glm::scale(Transform1, glm::vec3(0.5, 0.5, 0.5));
+    glm::vec3 CameraPosition = glm::vec3(0.f, 0.f, 3.f);
+    glm::vec3 CameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 TargetTowardsCamera = glm::normalize(CameraPosition - CameraTarget);
+
+    glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 CameraRight = glm::normalize(glm::cross(Up, TargetTowardsCamera));
+    glm::vec3 CameraUp = glm::normalize(glm::cross(TargetTowardsCamera, CameraRight));
+
+    glm::mat4 View = glm::lookAt(CameraPosition, CameraTarget, CameraUp);
 
     Shader_Going3D.setMat4("projection", Projection);
-    Shader_Going3D.setMat4("model", Model);
     Shader_Going3D.setMat4("view", View);
 
     float Delta = 0.f;
     float LastTime = glfwGetTime();
 
     // Set Active Textures for draw calls, usually done in loop if plannig to change em (i think?)
+    glEnable(GL_DEPTH_TEST);
+    GLbitfield ClearMask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -132,7 +138,7 @@ int main()
 
         processInput(window);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(ClearMask);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, CrateTextureID);
@@ -141,8 +147,30 @@ int main()
 
         Shader_Going3D.use();
 
+        const float radius = 10.0f;
+        float CamX = sin(LastTime) * radius;
+        float CamZ = cos(LastTime) * radius;
+        CameraPosition = glm::vec3(CamX, 0.0, CamZ);
+
+        TargetTowardsCamera = glm::normalize(CameraPosition - CameraTarget);
+
+        CameraRight = glm::normalize(glm::cross(Up, TargetTowardsCamera));
+        CameraUp = glm::normalize(glm::cross(TargetTowardsCamera, CameraRight));
+
+        View = glm::lookAt(CameraPosition, CameraTarget, CameraUp);
+        Shader_Going3D.setMat4("view", View);
+
         glBindVertexArray(VertexArrayObject);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        for (unsigned int i = 0; i < 10; i++)
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            float angle = glfwGetTime() * (i + 1);
+            if (i % 3 == 0)
+                model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            Shader_Going3D.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
