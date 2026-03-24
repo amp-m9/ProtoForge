@@ -30,7 +30,7 @@
             "name": "Win: Debug main",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/build/Debug/LearnOpenGL.exe",
+            "program": "${workspaceRoot}/build/LearnOpenGL.exe",
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",
             "environment": [],

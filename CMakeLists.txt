@@ -19,8 +19,8 @@ foreach(NameAndValue ${ConfigContents})
 endforeach()
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(DCMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(LOGL_ROOT "${CMAKE_BINARY_DIR}")
 if(GROUPED_LIBS)
     cmake_print_variables(${GROUPED_LIBS})
