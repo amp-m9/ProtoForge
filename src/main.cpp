@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <assert.h>
+#include "filesystem.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -6,57 +9,51 @@
 
 #include <iostream>
 #include <stb_image.h>
-#include <assert.h>
-#include "Utils.h"
 #include "Shader.h"
-#include "filesystem.h"
+#include "Utils.h"
 #include "main.h"
 
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+void FramebufferSizeCallback(GLFWwindow* Window, int width, int height)
 {
     glViewport(0, 0, width, height); // lower left corner followed by w*h
 }
 
-glm::vec3 CameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 CameraFront =  glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 CameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-glm::vec3 CameraRight = glm::normalize(glm::cross(CameraFront, CameraUp));
-
-float DeltaTime = 0.0f; // time between current frame and last frame    
-
-void processInput(GLFWwindow* window)
+void ProcessInput(GLFWwindow* Window)
 {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    if (glfwGetKey(Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
-        glfwSetWindowShouldClose(window, true);
+        glfwSetWindowShouldClose(Window, true);
     }
 
-    const float CameraSpeed = 40.f * DeltaTime;
+    const float CameraSpeed = 10.f * DeltaTime;
     glm::vec3 MovementDirection = glm::vec3(0.0f);
-    if(glfwGetKey(window, GLFW_KEY_W)== GLFW_PRESS)
+    if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS)
     {
         MovementDirection += CameraFront;
     }
-    if(glfwGetKey(window, GLFW_KEY_S)== GLFW_PRESS)
+    if (glfwGetKey(Window, GLFW_KEY_S) == GLFW_PRESS)
     {
         MovementDirection -= CameraFront;
     }
-    if(glfwGetKey(window, GLFW_KEY_A)== GLFW_PRESS)
+    if (glfwGetKey(Window, GLFW_KEY_A) == GLFW_PRESS)
     {
         MovementDirection -= CameraRight;
     }
-    if(glfwGetKey(window, GLFW_KEY_D)== GLFW_PRESS)
+    if (glfwGetKey(Window, GLFW_KEY_D) == GLFW_PRESS)
     {
         MovementDirection += CameraRight;
     }
-    
-    if(MovementDirection != glm::vec3(0.0f))
+
+    if (MovementDirection != glm::vec3(0.0f))
     {
         CameraPosition += glm::normalize(MovementDirection) * CameraSpeed;
     }
+}
+
+void ScrollCallback(GLFWwindow* Window, double InXOffSet, double InYOffSet)
+{
+    FOV -= (float)InYOffSet;
+    FOV = std::clamp(FOV, 1.0f, 60.f);
 }
 
 int main()
@@ -67,15 +64,15 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL)
+    GLFWwindow* Window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    if (Window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
 
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(Window);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -85,7 +82,7 @@ int main()
 
     glViewport(0, 0, 800, 600);
 
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(Window, FramebufferSizeCallback);
 
     Shader Shader_Going3D("assets/shaders/Coordinates_01/going3D.vs", "assets/shaders/Coordinates_01/going3D.fs");
     constexpr size_t arrLen = ArrayLength(CubeVertices);
@@ -140,7 +137,7 @@ int main()
 
     // rotate about x axis.
     glm::mat4 Projection = glm::mat4(1.0f);
-    Projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    Projection = glm::perspective(glm::radians(FOV), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
     glm::mat4 View = glm::lookAt(CameraPosition, CameraPosition + CameraFront, CameraUp);
 
@@ -149,27 +146,34 @@ int main()
 
     float LastTime = glfwGetTime();
 
-    // Set Active Textures for draw calls, usually done in loop if plannig to change em (i think?)
     glEnable(GL_DEPTH_TEST);
+
+    // Set Active Textures for draw calls, usually done in loop if plannig to change em (i think?)
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, CrateTextureID);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, FaceTextureID);
+
     GLbitfield ClearMask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
 
-    while (!glfwWindowShouldClose(window))
+    glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(Window, MouseCallback);
+    glfwSetScrollCallback(Window, ScrollCallback);
+
+    while (!glfwWindowShouldClose(Window))
     {
         DeltaTime = glfwGetTime() - LastTime;
         LastTime = glfwGetTime();
 
-        processInput(window);
+        ProcessInput(Window);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(ClearMask);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, CrateTextureID);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, FaceTextureID);
-
         Shader_Going3D.use();
+        // CameraRight = glm::normalize(glm::cross(CameraFront, CameraUp));
 
-        CameraRight = glm::normalize(glm::cross(CameraFront, CameraUp));
+        Projection = glm::perspective(glm::radians(FOV), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        Shader_Going3D.setMat4("projection", Projection);
 
         View = glm::lookAt(CameraPosition, CameraPosition + CameraFront, CameraUp);
         Shader_Going3D.setMat4("view", View);
@@ -186,7 +190,7 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(Window);
         glfwPollEvents();
     }
 
@@ -226,4 +230,36 @@ bool LoadTexture(const char* fileLocation, unsigned int& TextureID, const bool b
 
     stbi_image_free(TextureData);
     return true;
+}
+
+void MouseCallback(GLFWwindow* Window, double InXPos, double InYPos)
+{
+    if (!bMouseInit)
+    {
+        LastX = InXPos;
+        LastY = InYPos;
+        bMouseInit = true;
+    }
+
+    float XOffSet = InXPos - LastX;
+    float YOffset = InYPos - LastY;
+
+    LastX = InXPos;
+    LastY = InYPos;
+
+    constexpr float Sensitivity = 1.f;
+    XOffSet *= Sensitivity * DeltaTime;
+    YOffset *= Sensitivity * DeltaTime;
+
+    CameraYaw += XOffSet;
+    CameraPitch -= YOffset;
+
+    CameraPitch = std::clamp(CameraPitch, -89.0f, 89.0f);
+
+    glm::vec3 Direction;
+    Direction.x = cos(glm::radians(CameraYaw)) * cos(glm::radians(CameraPitch));
+    Direction.y = sin(glm::radians(CameraPitch));
+    Direction.z = sin(glm::radians(CameraYaw)) * cos(glm::radians(CameraPitch));
+
+    CameraFront = glm::normalize(Direction);
 }
