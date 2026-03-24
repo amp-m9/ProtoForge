@@ -20,11 +20,42 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height); // lower left corner followed by w*h
 }
 
+glm::vec3 CameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 CameraFront =  glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 CameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 CameraRight = glm::normalize(glm::cross(CameraFront, CameraUp));
+
+float DeltaTime = 0.0f; // time between current frame and last frame    
+
 void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(window, true);
+    }
+
+    const float CameraSpeed = 40.f * DeltaTime;
+    glm::vec3 MovementDirection = glm::vec3(0.0f);
+    if(glfwGetKey(window, GLFW_KEY_W)== GLFW_PRESS)
+    {
+        MovementDirection += CameraFront;
+    }
+    if(glfwGetKey(window, GLFW_KEY_S)== GLFW_PRESS)
+    {
+        MovementDirection -= CameraFront;
+    }
+    if(glfwGetKey(window, GLFW_KEY_A)== GLFW_PRESS)
+    {
+        MovementDirection -= CameraRight;
+    }
+    if(glfwGetKey(window, GLFW_KEY_D)== GLFW_PRESS)
+    {
+        MovementDirection += CameraRight;
+    }
+    
+    if(MovementDirection != glm::vec3(0.0f))
+    {
+        CameraPosition += glm::normalize(MovementDirection) * CameraSpeed;
     }
 }
 
@@ -57,9 +88,9 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     Shader Shader_Going3D("assets/shaders/Coordinates_01/going3D.vs", "assets/shaders/Coordinates_01/going3D.fs");
-    int arrLen = sizeof(CubeVertices) / sizeof(CubeVertices[0]);
+    constexpr size_t arrLen = ArrayLength(CubeVertices);
     float vertices[arrLen];
-    for (int i = 0; i < arrLen; ++i)
+    for (size_t i = 0; i < arrLen; ++i)
     {
         vertices[i] = CubeVertices[i];
     }
@@ -105,26 +136,17 @@ int main()
     Shader_Going3D.use();
     Shader_Going3D.setInt("texture1", 0);
     Shader_Going3D.setInt("texture2", 1);
-    Shader_Going3D.setFloat("blend", 0.2);
+    Shader_Going3D.setFloat("blend", 0.2f);
 
     // rotate about x axis.
     glm::mat4 Projection = glm::mat4(1.0f);
     Projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-    glm::vec3 CameraPosition = glm::vec3(0.f, 0.f, 3.f);
-    glm::vec3 CameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 TargetTowardsCamera = glm::normalize(CameraPosition - CameraTarget);
-
-    glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 CameraRight = glm::normalize(glm::cross(Up, TargetTowardsCamera));
-    glm::vec3 CameraUp = glm::normalize(glm::cross(TargetTowardsCamera, CameraRight));
-
-    glm::mat4 View = glm::lookAt(CameraPosition, CameraTarget, CameraUp);
+    glm::mat4 View = glm::lookAt(CameraPosition, CameraPosition + CameraFront, CameraUp);
 
     Shader_Going3D.setMat4("projection", Projection);
     Shader_Going3D.setMat4("view", View);
 
-    float Delta = 0.f;
     float LastTime = glfwGetTime();
 
     // Set Active Textures for draw calls, usually done in loop if plannig to change em (i think?)
@@ -133,7 +155,7 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
-        Delta = glfwGetTime() - LastTime;
+        DeltaTime = glfwGetTime() - LastTime;
         LastTime = glfwGetTime();
 
         processInput(window);
@@ -147,17 +169,9 @@ int main()
 
         Shader_Going3D.use();
 
-        const float radius = 10.0f;
-        float CamX = sin(LastTime) * radius;
-        float CamZ = cos(LastTime) * radius;
-        CameraPosition = glm::vec3(CamX, 0.0, CamZ);
+        CameraRight = glm::normalize(glm::cross(CameraFront, CameraUp));
 
-        TargetTowardsCamera = glm::normalize(CameraPosition - CameraTarget);
-
-        CameraRight = glm::normalize(glm::cross(Up, TargetTowardsCamera));
-        CameraUp = glm::normalize(glm::cross(TargetTowardsCamera, CameraRight));
-
-        View = glm::lookAt(CameraPosition, CameraTarget, CameraUp);
+        View = glm::lookAt(CameraPosition, CameraPosition + CameraFront, CameraUp);
         Shader_Going3D.setMat4("view", View);
 
         glBindVertexArray(VertexArrayObject);
@@ -173,7 +187,6 @@ int main()
         }
 
         glfwSwapBuffers(window);
-        glfwPollEvents();
         glfwPollEvents();
     }
 
