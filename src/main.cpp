@@ -12,6 +12,8 @@
 #include "Shader.h"
 #include "Utils.h"
 #include "main.h"
+#include "Camera.h"
+Camera* MainCam;
 
 void FramebufferSizeCallback(GLFWwindow* Window, int width, int height)
 {
@@ -24,36 +26,11 @@ void ProcessInput(GLFWwindow* Window)
     {
         glfwSetWindowShouldClose(Window, true);
     }
-
-    const float CameraSpeed = 10.f * DeltaTime;
-    glm::vec3 MovementDirection = glm::vec3(0.0f);
-    if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS)
-    {
-        MovementDirection += CameraFront;
-    }
-    if (glfwGetKey(Window, GLFW_KEY_S) == GLFW_PRESS)
-    {
-        MovementDirection -= CameraFront;
-    }
-    if (glfwGetKey(Window, GLFW_KEY_A) == GLFW_PRESS)
-    {
-        MovementDirection -= CameraRight;
-    }
-    if (glfwGetKey(Window, GLFW_KEY_D) == GLFW_PRESS)
-    {
-        MovementDirection += CameraRight;
-    }
-
-    if (MovementDirection != glm::vec3(0.0f))
-    {
-        CameraPosition += glm::normalize(MovementDirection) * CameraSpeed;
-    }
 }
 
 void ScrollCallback(GLFWwindow* Window, double InXOffSet, double InYOffSet)
 {
-    FOV -= (float)InYOffSet;
-    FOV = std::clamp(FOV, 1.0f, 60.f);
+    MainCam->HandleMouseScroll(InXOffSet, InYOffSet);
 }
 
 int main()
@@ -134,15 +111,12 @@ int main()
     Shader_Going3D.setInt("texture1", 0);
     Shader_Going3D.setInt("texture2", 1);
     Shader_Going3D.setFloat("blend", 0.2f);
-
+    
+    MainCam = new Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f);
     // rotate about x axis.
-    glm::mat4 Projection = glm::mat4(1.0f);
-    Projection = glm::perspective(glm::radians(FOV), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-    glm::mat4 View = glm::lookAt(CameraPosition, CameraPosition + CameraFront, CameraUp);
-
-    Shader_Going3D.setMat4("projection", Projection);
-    Shader_Going3D.setMat4("view", View);
+    Shader_Going3D.setMat4("projection", MainCam->GetProjectionMatrix());
+    Shader_Going3D.setMat4("view", MainCam->GetViewMatrix());
 
     float LastTime = glfwGetTime();
 
@@ -166,17 +140,15 @@ int main()
         LastTime = glfwGetTime();
 
         ProcessInput(Window);
+        MainCam->ProcessInput(Window, DeltaTime);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(ClearMask);
 
         Shader_Going3D.use();
         // CameraRight = glm::normalize(glm::cross(CameraFront, CameraUp));
 
-        Projection = glm::perspective(glm::radians(FOV), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        Shader_Going3D.setMat4("projection", Projection);
-
-        View = glm::lookAt(CameraPosition, CameraPosition + CameraFront, CameraUp);
-        Shader_Going3D.setMat4("view", View);
+        Shader_Going3D.setMat4("projection", MainCam->GetProjectionMatrix());
+        Shader_Going3D.setMat4("view", MainCam->GetViewMatrix());
 
         glBindVertexArray(VertexArrayObject);
         for (unsigned int i = 0; i < 10; i++)
@@ -234,32 +206,5 @@ bool LoadTexture(const char* fileLocation, unsigned int& TextureID, const bool b
 
 void MouseCallback(GLFWwindow* Window, double InXPos, double InYPos)
 {
-    if (!bMouseInit)
-    {
-        LastX = InXPos;
-        LastY = InYPos;
-        bMouseInit = true;
-    }
-
-    float XOffSet = InXPos - LastX;
-    float YOffset = InYPos - LastY;
-
-    LastX = InXPos;
-    LastY = InYPos;
-
-    constexpr float Sensitivity = 1.f;
-    XOffSet *= Sensitivity * DeltaTime;
-    YOffset *= Sensitivity * DeltaTime;
-
-    CameraYaw += XOffSet;
-    CameraPitch -= YOffset;
-
-    CameraPitch = std::clamp(CameraPitch, -89.0f, 89.0f);
-
-    glm::vec3 Direction;
-    Direction.x = cos(glm::radians(CameraYaw)) * cos(glm::radians(CameraPitch));
-    Direction.y = sin(glm::radians(CameraPitch));
-    Direction.z = sin(glm::radians(CameraYaw)) * cos(glm::radians(CameraPitch));
-
-    CameraFront = glm::normalize(Direction);
+    MainCam->HandleMouseMove(InXPos, InYPos, DeltaTime);
 }
