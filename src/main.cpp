@@ -69,10 +69,7 @@ int main()
         vertices[i] = CubeVertices[i];
     }
 
-    glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),     glm::vec3(2.0f, 5.0f, -15.0f), glm::vec3(-1.5f, -2.2f, -2.5f),
-                                 glm::vec3(-3.8f, -2.0f, -12.3f), glm::vec3(2.4f, -0.4f, -3.5f), glm::vec3(-1.7f, 3.0f, -7.5f),
-                                 glm::vec3(1.3f, -2.0f, -2.5f),   glm::vec3(1.5f, 2.0f, -2.5f),  glm::vec3(1.5f, 0.2f, -1.5f),
-                                 glm::vec3(-1.3f, 1.0f, -1.5f)};
+    glm::vec3 cubePosition  = glm::vec3(0.0f, 0.0f, 0.0f);
 
     unsigned int indices[] = {0, 1, 2, 1, 2, 3};
 
@@ -90,13 +87,6 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // Load textures
-    unsigned int FaceTextureID, CrateTextureID;
-    LoadTexture("assets/textures/wooden_container.jpg", CrateTextureID, false, true);
-    LoadTexture("assets/textures/awesomeface.png", FaceTextureID, true);
 
     glGenBuffers(1, &ElementBufferObject);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ElementBufferObject);
@@ -108,9 +98,6 @@ int main()
     glBindVertexArray(0);
 
     Shader_Going3D.use();
-    Shader_Going3D.setInt("texture1", 0);
-    Shader_Going3D.setInt("texture2", 1);
-    Shader_Going3D.setFloat("blend", 0.2f);
     
     MainCam = new Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f);
     // rotate about x axis.
@@ -121,12 +108,6 @@ int main()
     float LastTime = glfwGetTime();
 
     glEnable(GL_DEPTH_TEST);
-
-    // Set Active Textures for draw calls, usually done in loop if plannig to change em (i think?)
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, CrateTextureID);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, FaceTextureID);
 
     GLbitfield ClearMask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
 
@@ -151,16 +132,12 @@ int main()
         Shader_Going3D.setMat4("view", MainCam->GetViewMatrix());
 
         glBindVertexArray(VertexArrayObject);
-        for (unsigned int i = 0; i < 10; i++)
-        {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, cubePositions[i]);
-            float angle = glfwGetTime() * (i + 1);
-            if (i % 3 == 0)
-                model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            Shader_Going3D.setMat4("model", model);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
+        glm::mat4 model = glm::mat4(1.0f);
+        float angle = glfwGetTime() * (i + 1);
+        if (i % 3 == 0)
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+        Shader_Going3D.setMat4("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glfwSwapBuffers(Window);
         glfwPollEvents();
