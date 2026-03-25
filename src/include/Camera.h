@@ -12,15 +12,15 @@ public:
     {
     };
 
-    glm::mat4 GetViewMatrix() const
+    const glm::mat4& GetViewMatrix() const
     {
-        return glm::lookAt(Position, Position + Forward, Up);
+        return ViewMatrix;
     }
 
     // Returns perspective projection matrix using the camera's FOV, aspect ratio, near plane and far plane.
-    glm::mat4 GetProjectionMatrix() const
+    const glm::mat4& GetProjectionMatrix() const
     {
-        return glm::perspective(glm::radians(FOV), AspectRatio, NearPlane, FarPlane);
+        return ProjectionMatrix;
     }
 
     void ProcessInput(GLFWwindow* Window, float DeltaTime)
@@ -47,7 +47,9 @@ public:
         if (MovementDirection != glm::vec3(0.0f))
         {
             Position += glm::normalize(MovementDirection) * CameraSpeed;
+            UpdateCameraMatrices();
         }
+
     }
     void HandleMouseMove(double InXPos, double InYPos, float DeltaTime)
     {
@@ -72,6 +74,21 @@ public:
 
         Pitch = std::clamp(Pitch, -89.0f, 89.0f);
 
+        UpdateCameraMatrices();
+    };
+
+    void HandleMouseScroll(double InXOffSet, double InYOffSet)
+    {
+        FOV -= (float)InYOffSet;
+        FOV = std::clamp(FOV, 1.0f, 60.f);
+        
+        UpdateCameraMatrices();
+    }  
+
+    void UpdateCameraMatrices()
+    {
+        ViewMatrix = glm::lookAt(Position, Position + Forward, Up);
+
         glm::vec3 Direction;
         Direction.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
         Direction.y = sin(glm::radians(Pitch));
@@ -80,20 +97,20 @@ public:
         Forward = glm::normalize(Direction);
         Right = glm::normalize(glm::cross(Forward, glm::vec3(0.0f, 1.0f, 0.0f)));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
         Up    = glm::normalize(glm::cross(Right, Forward));
-    };
-    void HandleMouseScroll(double InXOffSet, double InYOffSet)
-    {
-        FOV -= (float)InYOffSet;
-        FOV = std::clamp(FOV, 1.0f, 60.f);
-    }   
+
+        ProjectionMatrix = glm::perspective(glm::radians(FOV), AspectRatio, NearPlane, FarPlane);
+    }
+
 private:
     float Sensitivity = 1.f;
     float Yaw = 0.0f;;
     float Pitch = 0.0f;
     float LastX = 0.0f;
     float LastY = 0.0f;
+
     glm::vec3 Position;
     glm::vec3 Up,Forward,Right;
+    glm::mat4 ProjectionMatrix, ViewMatrix;
 
     float FOV;
     float AspectRatio;
