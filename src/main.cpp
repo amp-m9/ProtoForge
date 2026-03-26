@@ -12,7 +12,9 @@
 #include "Shader.h"
 #include "Utils.h"
 #include "main.h"
+#include "Model.h"
 #include "Camera.h"
+#include "Helpers.h"
 Camera* MainCam;
 
 void FramebufferSizeCallback(GLFWwindow* Window, int width, int height)
@@ -61,8 +63,11 @@ int main()
 
     glfwSetFramebufferSizeCallback(Window, FramebufferSizeCallback);
 
-    Shader Shader_Going3D("assets/shaders/Coordinates_01/going3D.vs", "assets/shaders/Coordinates_01/going3D.fs");
+    Shader LitObjectShader("assets/shaders/01_Lighting/00_Colours/colours.vs", "assets/shaders/01_Lighting/00_Colours/colours.fs");
+    Shader WhiteLightShader("assets/shaders/01_Lighting/00_Colours/colours.vs", "assets/shaders/01_Lighting/00_Colours/whiteLight.fs");
+    
     constexpr size_t arrLen = ArrayLength(CubeVertices);
+    
     float vertices[arrLen];
     for (size_t i = 0; i < arrLen; ++i)
     {
@@ -73,37 +78,31 @@ int main()
 
     unsigned int indices[] = {0, 1, 2, 1, 2, 3};
 
-    unsigned int VertexBufferObject, VertexArrayObject, ElementBufferObject;
-    glGenVertexArrays(1, &VertexArrayObject);
-
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VertexArrayObject);
-
+    unsigned int VertexBufferObject, BoxVAO, LightingVAO;
+    
+    glGenVertexArrays(1, &BoxVAO);
+    glBindVertexArray(BoxVAO);
     glGenBuffers(1, &VertexBufferObject);
     glBindBuffer(GL_ARRAY_BUFFER, VertexBufferObject);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // Positions
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
+    glGenBuffers(1, &LightingVAO);
+    glBindVertexArray(LightingVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VertexBufferObject);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
-    glGenBuffers(1, &ElementBufferObject);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ElementBufferObject);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the
-    // vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    Shader_Going3D.use();
+    LitObjectShader.use();
+    LitObjectShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+    LitObjectShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
     
     MainCam = new Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f);
     // rotate about x axis.
 
-    Shader_Going3D.setMat4("projection", MainCam->GetProjectionMatrix());
-    Shader_Going3D.setMat4("view", MainCam->GetViewMatrix());
+    LitObjectShader.setMat4("projection", MainCam->GetProjectionMatrix());
+    LitObjectShader.setMat4("view", MainCam->GetViewMatrix());
 
     float LastTime = glfwGetTime();
 
@@ -125,27 +124,24 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(ClearMask);
 
-        Shader_Going3D.use();
+        LitObjectShader.use();
         // CameraRight = glm::normalize(glm::cross(CameraFront, CameraUp));
 
-        Shader_Going3D.setMat4("projection", MainCam->GetProjectionMatrix());
-        Shader_Going3D.setMat4("view", MainCam->GetViewMatrix());
+        LitObjectShader.setMat4("projection", MainCam->GetProjectionMatrix());
+        LitObjectShader.setMat4("view", MainCam->GetViewMatrix());
 
-        glBindVertexArray(VertexArrayObject);
+        glBindVertexArray(BoxVAO);
         glm::mat4 model = glm::mat4(1.0f);
-        float angle = glfwGetTime() * (i + 1);
-        if (i % 3 == 0)
-            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-        Shader_Going3D.setMat4("model", model);
+        LitObjectShader.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glfwSwapBuffers(Window);
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &VertexArrayObject);
+    glDeleteVertexArrays(1, &BoxVAO);
     glDeleteBuffers(1, &VertexBufferObject);
-    glDeleteBuffers(1, &ElementBufferObject);
+    glDeleteBuffers(1, &LightingVAO);
 
     glfwTerminate();
     return 0;

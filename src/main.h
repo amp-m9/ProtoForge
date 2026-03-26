@@ -1,5 +1,6 @@
-float DeltaTime = 0.0f; // time between current frame and last frame\
+#pragma once
 
+float DeltaTime = 0.0f; // time between current frame and last frame\
 
 bool LoadTexture(const char* fileLocation, unsigned int& TextureID, const bool bUseAlpha = false, const bool bFlipVerticallyOnLoad = false);
 void MouseCallback(GLFWwindow* Window, double xpos, double ypos);
@@ -13,10 +14,6 @@ float FOV = 45.0f;
 
 bool bMouseInit = false;
 
-template <typename T, size_t N> constexpr size_t ArrayLength(const T (&)[N])
-{
-    return N;
-}
 const float CubeVertices[] = {-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.5f,  -0.5f, -0.5f, 1.0f, 0.0f, 0.5f,  0.5f,  -0.5f, 1.0f, 1.0f,
                               0.5f,  0.5f,  -0.5f, 1.0f, 1.0f, -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f, -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
 

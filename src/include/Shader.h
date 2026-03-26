@@ -1,5 +1,4 @@
-#ifndef SHADER_H
-#define SHADER_H
+#pragma once
 
 #include <string>
 #include <glad/glad.h>
@@ -44,4 +43,3 @@ class Shader
     bool LoadShaderFileAtPath(const char* Path, std::string& Code);
     void CreateAndSetShaderProgram(const char*& VertexCode, const char*& FragmentCode);
 };
-#endif
