@@ -65,40 +65,33 @@ int main()
 
     Shader LitObjectShader("assets/shaders/01_Lighting/00_Colours/colours.vs", "assets/shaders/01_Lighting/00_Colours/colours.fs");
     Shader WhiteLightShader("assets/shaders/01_Lighting/00_Colours/colours.vs", "assets/shaders/01_Lighting/00_Colours/whiteLight.fs");
-    
+
     constexpr size_t arrLen = ArrayLength(CubeVertices);
-    
+
     float vertices[arrLen];
     for (size_t i = 0; i < arrLen; ++i)
     {
         vertices[i] = CubeVertices[i];
     }
 
-    glm::vec3 cubePosition  = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 cubePosition = glm::vec3(0.0f, 0.0f, 0.0f);
 
     unsigned int indices[] = {0, 1, 2, 1, 2, 3};
 
-    unsigned int VertexBufferObject, BoxVAO, LightingVAO;
-    
-    glGenVertexArrays(1, &BoxVAO);
-    glBindVertexArray(BoxVAO);
-    glGenBuffers(1, &VertexBufferObject);
-    glBindBuffer(GL_ARRAY_BUFFER, VertexBufferObject);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    VAOData BoxVAOData;
+    BoxVAOData.CountAtPosition = 3;
+    BoxVAOData.NormalizedAtPosition = false;
+    BoxVAOData.Position = 0;
+    BoxVAOData.StrideAtPosition = 5 * sizeof(float);
+    BoxVAOData.TypeAtPosition = GL_FLOAT;
+    Model BoxModel = Model(vertices, sizeof(vertices), BoxVAOData, &LitObjectShader);
 
-    glGenBuffers(1, &LightingVAO);
-    glBindVertexArray(LightingVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VertexBufferObject);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    BoxModel.GetShader()->use();
+    BoxModel.GetShader()->setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+    BoxModel.GetShader()->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 
-    LitObjectShader.use();
-    LitObjectShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-    LitObjectShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-    
-    MainCam = new Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f);
+    MainCam = new Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV,
+                         (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f);
     // rotate about x axis.
 
     LitObjectShader.setMat4("projection", MainCam->GetProjectionMatrix());
@@ -124,24 +117,13 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(ClearMask);
 
-        LitObjectShader.use();
-        // CameraRight = glm::normalize(glm::cross(CameraFront, CameraUp));
-
-        LitObjectShader.setMat4("projection", MainCam->GetProjectionMatrix());
-        LitObjectShader.setMat4("view", MainCam->GetViewMatrix());
-
-        glBindVertexArray(BoxVAO);
-        glm::mat4 model = glm::mat4(1.0f);
-        LitObjectShader.setMat4("model", model);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        BoxModel.Draw(MainCam);
 
         glfwSwapBuffers(Window);
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &BoxVAO);
-    glDeleteBuffers(1, &VertexBufferObject);
-    glDeleteBuffers(1, &LightingVAO);
+    BoxModel.FreeAll();
 
     glfwTerminate();
     return 0;
