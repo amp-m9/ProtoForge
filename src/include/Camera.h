@@ -9,8 +9,8 @@
 class Camera
 {
   public:
-    Camera(glm::vec3 Position, glm::vec3 Up, glm::vec3 Forward, float FOV, float AspectRatio, float NearPlane, float FarPlane)
-        : Position(Position), Up(Up), Forward(Forward), FOV(FOV), AspectRatio(AspectRatio), NearPlane(NearPlane), FarPlane(FarPlane) {};
+    Camera(glm::vec3 Position, glm::vec3 CamUp, glm::vec3 CamForward, float FOV, float AspectRatio, float NearPlane, float FarPlane)
+        : Position(Position), CamUp(CamUp), CamForward(CamForward), FOV(FOV), AspectRatio(AspectRatio), NearPlane(NearPlane), FarPlane(FarPlane) {};
 
     const glm::mat4& GetViewMatrix() const { return ViewMatrix; }
 
@@ -23,19 +23,27 @@ class Camera
         glm::vec3 MovementDirection = glm::vec3(0.0f);
         if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS)
         {
-            MovementDirection += Forward;
+            MovementDirection += CamForward;
         }
         if (glfwGetKey(Window, GLFW_KEY_S) == GLFW_PRESS)
         {
-            MovementDirection -= Forward;
+            MovementDirection -= CamForward;
         }
         if (glfwGetKey(Window, GLFW_KEY_A) == GLFW_PRESS)
         {
-            MovementDirection -= glm::normalize(glm::cross(Forward, Up));
+            MovementDirection -= glm::normalize(glm::cross(CamForward, CamUp));
         }
         if (glfwGetKey(Window, GLFW_KEY_D) == GLFW_PRESS)
         {
-            MovementDirection += glm::normalize(glm::cross(Forward, Up));
+            MovementDirection += glm::normalize(glm::cross(CamForward, CamUp));
+        }
+        if (glfwGetKey(Window, GLFW_KEY_Q) == GLFW_PRESS)
+        {
+            MovementDirection -= GlobalUp;
+        }
+        if (glfwGetKey(Window, GLFW_KEY_E) == GLFW_PRESS)
+        {
+            MovementDirection += GlobalUp;
         }
 
         if (MovementDirection != glm::vec3(0.0f))
@@ -80,17 +88,16 @@ class Camera
 
     void UpdateCameraMatrices()
     {
-        ViewMatrix = glm::lookAt(Position, Position + Forward, Up);
+        ViewMatrix = glm::lookAt(Position, Position + CamForward, CamUp);
 
         glm::vec3 Direction;
         Direction.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
         Direction.y = sin(glm::radians(Pitch));
         Direction.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
 
-        Forward = glm::normalize(Direction);
-        Right = glm::normalize(glm::cross(Forward, glm::vec3(0.0f, 1.0f, 0.0f))); // normalize the vectors, because their length gets closer to 0 the
-                                                                                  // more you look up or down which results in slower movement.
-        Up = glm::normalize(glm::cross(Right, Forward));
+        CamForward = glm::normalize(Direction);
+        CamRight = glm::normalize(glm::cross(CamForward, glm::vec3(0.0f, 1.0f, 0.0f)));
+        CamUp = glm::normalize(glm::cross(CamRight, CamForward));
 
         ProjectionMatrix = glm::perspective(glm::radians(FOV), AspectRatio, NearPlane, FarPlane);
     }
@@ -104,9 +111,11 @@ class Camera
     float LastY = 0.0f;
 
     glm::vec3 Position;
-    glm::vec3 Up, Forward, Right;
+    glm::vec3 CamUp, CamForward, CamRight;
     glm::mat4 ProjectionMatrix, ViewMatrix;
 
+    const glm::vec3 GlobalUp = glm::vec3(0.f, 1.0f, 0.f);
+    const glm::vec3 GlobalForward{0, 1, 0};
     float FOV;
     float AspectRatio;
     float NearPlane, FarPlane;

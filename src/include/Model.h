@@ -7,17 +7,38 @@
 #include "Shader.h"
 #include "Camera.h"
 
+// clang-format off
+// Specialisations for each type
+template <typename T> struct GLType;
+template <> struct GLType<float>         { static constexpr GLenum value = GL_FLOAT; };
+template <> struct GLType<double>        { static constexpr GLenum value = GL_DOUBLE; };
+template <> struct GLType<int>           { static constexpr GLenum value = GL_INT; };
+template <> struct GLType<unsigned int>  { static constexpr GLenum value = GL_UNSIGNED_INT; };
+template <> struct GLType<short>         { static constexpr GLenum value = GL_SHORT; };
+template <> struct GLType<unsigned char> { static constexpr GLenum value = GL_UNSIGNED_BYTE; };
+// clang-format on
+struct VertexAttributeBase
+{
+
+  public:
+    GLuint Position = 0;
+    size_t Offset = 0;
+    GLint CountAtPosition = 3;
+    GLboolean NormalizedAtPosition = GL_FALSE;
+    GLenum TypeAtPosition = GL_FLOAT;
+};
+
+template <typename T> struct VertexAttribute : VertexAttributeBase
+{
+    VertexAttribute<T>() { TypeAtPosition = GLType<T>::value; }
+    size_t GetSize() { return sizeof(T) * CountAtPosition; }
+    GLenum GetType() { return TypeAtPosition; }
+};
+
 struct VAOData
 {
-    GLuint Position = 0;
-    GLint CountAtPosition = 3; // Size of the vertex attribute at position.
-
-    // Float etc?
-    GLenum TypeAtPosition = GL_FLOAT;
-
-    // Byte offset between consecutive vertex attributes. If 0, the vertex attributes are understood to be tightly packed.
-    GLsizei StrideAtPosition = sizeof(float) * 3;
-    GLboolean NormalizedAtPosition = GL_FALSE;
+    GLsizei Stride = sizeof(float) * 3;
+    std::vector<VertexAttributeBase> Attributes;
 };
 
 class Model
@@ -36,17 +57,24 @@ class Model
         glGenBuffers(1, &VBO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, dataSize, data, usage);
-        VertexCount = dataSize / vaoData.StrideAtPosition;
 
-        // change to do for each attribute in vaoData, where each VAOData is for a different attribute. For now, we just assume one attribute.
-        glVertexAttribPointer(vaoData.Position, vaoData.CountAtPosition, vaoData.TypeAtPosition, GL_FALSE, vaoData.StrideAtPosition, (void*)0);
-        glEnableVertexAttribArray(0);
+        VertexCount = dataSize / vaoData.Stride;
+        for (auto& attr : vaoData.Attributes)
+        {
+            glVertexAttribPointer(attr.Position, attr.CountAtPosition, attr.TypeAtPosition, GL_FALSE, vaoData.Stride, (void*)(attr.Offset));
+            glEnableVertexAttribArray(attr.Position);
+        }
 
         if (shader != nullptr)
         {
             ObjectShader = shader;
         }
     };
+
+    void SetPosition(float X, float Y, float Z) { Position = glm::vec3(X, Y, Z); }
+    const glm::vec3& GetPosition() { return Position; }
+    void SetRotation(float X, float Y, float Z) { Rotation = glm::vec3(X, Y, Z); }
+    void SetScale(float X, float Y, float Z) { Scale = glm::vec3(X, Y, Z); }
 
     void Draw(Camera* Camera)
     {
@@ -56,10 +84,10 @@ class Model
         ObjectShader->setMat4("view", Camera->GetViewMatrix());
         ObjectShader->setMat4("model", GetModelMatrix());
 
-        // if (Texture)
-        // {
-        //     glBindTexture(GL_TEXTURE_2D, Texture);
-        // }
+        if (Texture)
+        {
+            glBindTexture(GL_TEXTURE_2D, Texture);
+        }
         glDrawArrays(GL_TRIANGLES, 0, VertexCount);
     };
 
@@ -67,6 +95,7 @@ class Model
     {
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, Position);
+        // model = glm::rotate(model, Rotation);
         model = glm::scale(model, Scale);
         return model;
     };
@@ -142,23 +171,52 @@ template <> const void Model::SetShaderUniform<glm::vec3>(const std::string& nam
 
 namespace DefaultModels
 {
-float TexturedCube[] = {-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.5f,  -0.5f, -0.5f, 1.0f, 0.0f, 0.5f,  0.5f,  -0.5f, 1.0f, 1.0f,
-                        0.5f,  0.5f,  -0.5f, 1.0f, 1.0f, -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f, -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+// clang-format off
+float TexturedCube[] = {
 
-                        -0.5f, -0.5f, 0.5f,  0.0f, 0.0f, 0.5f,  -0.5f, 0.5f,  1.0f, 0.0f, 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                        0.5f,  0.5f,  0.5f,  1.0f, 1.0f, -0.5f, 0.5f,  0.5f,  0.0f, 1.0f, -0.5f, -0.5f, 0.5f,  0.0f, 0.0f,
+    // Position          // Texture  // Normals
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  0.0f, -1.0f,
+    0.5f,  -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,  0.0f, -1.0f,
+    0.5f,  0.5f,  -0.5f, 1.0f, 1.0f, 0.0f,  0.0f, -1.0f,
+    0.5f,  0.5f,  -0.5f, 1.0f, 1.0f, 0.0f,  0.0f, -1.0f,
+    -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,  0.0f, -1.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  0.0f, -1.0f,
 
-                        -0.5f, 0.5f,  0.5f,  1.0f, 0.0f, -0.5f, 0.5f,  -0.5f, 1.0f, 1.0f, -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-                        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, -0.5f, -0.5f, 0.5f,  0.0f, 0.0f, -0.5f, 0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f, 0.5f,  0.0f, 0.0f, 0.0f,  0.0f, 1.0f,
+    0.5f,  -0.5f, 0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
+    0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 1.0f,
+    0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 1.0f,
+    -0.5f, 0.5f,  0.5f,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f, 0.5f,  0.0f, 0.0f, 0.0f,  0.0f, 1.0f,
 
-                        0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.5f,  0.5f,  -0.5f, 1.0f, 1.0f, 0.5f,  -0.5f, -0.5f, 0.0f, 1.0f,
-                        0.5f,  -0.5f, -0.5f, 0.0f, 1.0f, 0.5f,  -0.5f, 0.5f,  0.0f, 0.0f, 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, 0.5f,  0.5f,  1.0f, 0.0f, -1.0f,  0.0f,  0.0f,
+    -0.5f, 0.5f,  -0.5f, 1.0f, 1.0f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f, 0.5f,  0.0f, 0.0f, -1.0f,  0.0f,  0.0f,
+    -0.5f, 0.5f,  0.5f,  1.0f, 0.0f, -1.0f,  0.0f,  0.0f,
 
-                        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.5f,  -0.5f, -0.5f, 1.0f, 1.0f, 0.5f,  -0.5f, 0.5f,  1.0f, 0.0f,
-                        0.5f,  -0.5f, 0.5f,  1.0f, 0.0f, -0.5f, -0.5f, 0.5f,  0.0f, 0.0f, -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+    0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,  0.0f,  0.0f,
+    0.5f,  0.5f,  -0.5f, 1.0f, 1.0f, 1.0f,  0.0f,  0.0f,
+    0.5f,  -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,  0.0f,  0.0f,
+    0.5f,  -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,  0.0f,  0.0f,
+    0.5f,  -0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  0.0f,  0.0f, 
+    0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,  0.0f,  0.0f,
 
-                        -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.5f,  0.5f,  -0.5f, 1.0f, 1.0f, 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                        0.5f,  0.5f,  0.5f,  1.0f, 0.0f, -0.5f, 0.5f,  0.5f,  0.0f, 0.0f, -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f};
+    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, -1.0f,  0.0f,
+    0.5f,  -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, -1.0f,  0.0f,
+    0.5f,  -0.5f, 0.5f,  1.0f, 0.0f, 0.0f, -1.0f,  0.0f,
+    0.5f,  -0.5f, 0.5f,  1.0f, 0.0f, 0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f, 0.5f,  0.0f, 0.0f, 0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, -1.0f,  0.0f,
+
+    -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
+    0.5f,  0.5f,  -0.5f, 1.0f, 1.0f, 0.0f,  1.0f,  0.0f,
+    0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,  1.0f,  0.0f,
+    0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,  1.0f,  0.0f,
+    -0.5f, 0.5f,  0.5f,  0.0f, 0.0f, 0.0f,  1.0f,  0.0f,
+    -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,  1.0f,  0.0f
+};
 
 float TexturedSquare[] = {
     // Positions         // Texture coords

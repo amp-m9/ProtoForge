@@ -66,37 +66,40 @@ int main()
     Shader LitObjectShader("assets/shaders/01_Lighting/00_Colours/colours.vs", "assets/shaders/01_Lighting/00_Colours/colours.fs");
     Shader WhiteLightShader("assets/shaders/01_Lighting/00_Colours/colours.vs", "assets/shaders/01_Lighting/00_Colours/whiteLight.fs");
 
-    constexpr size_t arrLen = ArrayLength(CubeVertices);
-
-    float vertices[arrLen];
-    for (size_t i = 0; i < arrLen; ++i)
-    {
-        vertices[i] = CubeVertices[i];
-    }
-
     glm::vec3 cubePosition = glm::vec3(0.0f, 0.0f, 0.0f);
 
     unsigned int indices[] = {0, 1, 2, 1, 2, 3};
 
     VAOData BoxVAOData;
-    BoxVAOData.CountAtPosition = 3;
-    BoxVAOData.NormalizedAtPosition = false;
-    BoxVAOData.Position = 0;
-    BoxVAOData.StrideAtPosition = 5 * sizeof(float);
-    BoxVAOData.TypeAtPosition = GL_FLOAT;
-    Model BoxModel = Model(vertices, sizeof(vertices), BoxVAOData, &LitObjectShader);
+    BoxVAOData.Stride = 8 * sizeof(float);
 
-    BoxModel.GetShader()->use();
-    BoxModel.GetShader()->setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-    BoxModel.GetShader()->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+    VertexAttribute<float> posAttr, normalAttribute;
+    posAttr.CountAtPosition = 3;
+    posAttr.NormalizedAtPosition = false;
+    posAttr.Position = 0;
+    posAttr.Offset = 0;
+
+    normalAttribute = posAttr;
+    normalAttribute.Position = 2; //             Texture is 2d float
+    normalAttribute.Offset = posAttr.GetSize() + (2 * (sizeof(float)));
+
+    BoxVAOData.Attributes.emplace_back(posAttr);
+    BoxVAOData.Attributes.emplace_back(normalAttribute);
+
+    Model BoxModel = Model(DefaultModels::TexturedCube, sizeof(DefaultModels::TexturedCube), BoxVAOData, &LitObjectShader);
+
+    BoxModel.SetShaderUniform<glm::vec3>("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
+    BoxModel.SetShaderUniform<glm::vec3>("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+
+    Model LightModel = Model(DefaultModels::TexturedCube, sizeof(DefaultModels::TexturedCube), BoxVAOData, &WhiteLightShader);
+    LightModel.SetPosition(1.f, 1.f, -2.0f);
+    LightModel.SetScale(.2f, .2f, .2f);
+
+    BoxModel.SetShaderUniform<glm::vec3>("lightPos", LightModel.GetPosition());
 
     MainCam = new Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV,
                          (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f);
     // rotate about x axis.
-
-    LitObjectShader.setMat4("projection", MainCam->GetProjectionMatrix());
-    LitObjectShader.setMat4("view", MainCam->GetViewMatrix());
-
     float LastTime = glfwGetTime();
 
     glEnable(GL_DEPTH_TEST);
@@ -118,6 +121,7 @@ int main()
         glClear(ClearMask);
 
         BoxModel.Draw(MainCam);
+        LightModel.Draw(MainCam);
 
         glfwSwapBuffers(Window);
         glfwPollEvents();
