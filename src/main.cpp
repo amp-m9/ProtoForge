@@ -73,32 +73,42 @@ int main()
     VAOData BoxVAOData;
     BoxVAOData.Stride = 8 * sizeof(float);
 
-    VertexAttribute<float> posAttr, normalAttribute;
+    VertexAttribute<float> posAttr, normalAttribute, textureAttribute;
     posAttr.CountAtPosition = 3;
     posAttr.NormalizedAtPosition = false;
     posAttr.Position = 0;
     posAttr.Offset = 0;
 
     normalAttribute = posAttr;
-    normalAttribute.Position = 2; //             Texture is 2d float
-    normalAttribute.Offset = posAttr.GetSize() + (2 * (sizeof(float)));
+    normalAttribute.Position = 1; 
+    normalAttribute.Offset = posAttr.GetSize();
+
+    textureAttribute = posAttr;
+    textureAttribute.Position = 2;  
+    textureAttribute.Offset = posAttr.GetSize() + normalAttribute.GetSize();
 
     BoxVAOData.Attributes.emplace_back(posAttr);
     BoxVAOData.Attributes.emplace_back(normalAttribute);
+    BoxVAOData.Attributes.emplace_back(textureAttribute);
 
     Model BoxModel = Model(DefaultModels::TexturedCube, sizeof(DefaultModels::TexturedCube), BoxVAOData, &LitObjectShader);
-
-    BoxModel.SetShaderUniform<glm::vec3>("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
     BoxModel.SetShaderUniform<glm::vec3>("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+
+    Material* BoxMaterial = new Material();
+    BoxModel.SetMaterial(BoxMaterial);
+    BoxModel.LoadTexture("assets/textures/woodAndSteelContainer_diffuse.png", true, false, TextureType::Diffuse);
+    BoxModel.LoadTexture("assets/textures/woodAndSteelContainer_specular.png", true, false, TextureType::Specular);
 
     Model LightModel = Model(DefaultModels::TexturedCube, sizeof(DefaultModels::TexturedCube), BoxVAOData, &WhiteLightShader);
     LightModel.SetPosition(1.f, 1.f, -2.0f);
     LightModel.SetScale(.2f, .2f, .2f);
 
-    BoxModel.SetShaderUniform<glm::vec3>("lightPos", LightModel.GetPosition());
+    Light* LightPtr = new Light();
+    LightPtr->Position = LightModel.GetPosition();
 
     MainCam = new Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV,
                          (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f);
+
     // rotate about x axis.
     float LastTime = glfwGetTime();
 
@@ -109,6 +119,7 @@ int main()
     glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(Window, MouseCallback);
     glfwSetScrollCallback(Window, ScrollCallback);
+    glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
     while (!glfwWindowShouldClose(Window))
     {
@@ -117,10 +128,12 @@ int main()
 
         ProcessInput(Window);
         MainCam->ProcessInput(Window, DeltaTime);
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        BoxModel.SetShaderUniform<glm::vec3>("viewPos", MainCam->GetPosition());
+
+        glClearColor(0.f, 0.f, 0.f, 1.0f);
         glClear(ClearMask);
 
-        BoxModel.Draw(MainCam);
+        BoxModel.Draw(MainCam, LightPtr);
         LightModel.Draw(MainCam);
 
         glfwSwapBuffers(Window);
