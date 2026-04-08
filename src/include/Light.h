@@ -21,11 +21,13 @@ struct Light
     float Constant = 1.0f;
     float Linear = 0.09f;
     float Quadratic = 0.032f;
-    float CutOff = glm::cos(glm::radians(12.5f));
+    float InnerCutOff = glm::cos(glm::radians(12.5f));
+    float OuterCutOff = glm::cos(glm::radians(17.5f));
 
     glm::vec4 GetPosition()
     {
         return glm::vec4(Position, Type == LightType::PointLight ? 1.f:0 );
     }
-    float GetCutOff() {return Type != LightType::SpotLight ? glm::cos(glm::radians(360.0f)) : CutOff;};
+    float GetInnerCutOff() {return Type != LightType::SpotLight ? glm::cos(glm::radians(360.0f)) : InnerCutOff;};
+    float GetOuterCutOff() {return Type != LightType::SpotLight ? glm::cos(glm::radians(360.0f)) : OuterCutOff;};
 };

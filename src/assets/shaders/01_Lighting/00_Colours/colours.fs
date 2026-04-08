@@ -12,19 +12,32 @@ struct Material
     vec3 specular;
     float shininess;
 };
-
-struct Light 
+struct DirectionalLight 
 {
-    vec4 position;
+    bool bIsActive = false;
     vec3 direction;
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+}; 
+
+struct PointLight 
+{
+    bool bIsActive = false;
+    vec4 position;
+
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+
     float constant;
     float linear;
     float quadratic;
-    float cutOff;
+    float innerCutOff;
+    float outerCutOff;
 };
+
+#define NR_POINT_LIGHTS 200;
 
 in vec3 Normal;  
 in vec3 FragPos;  
@@ -66,10 +79,16 @@ void main()
     
     ambient  *= attenuation; 
     diffuse  *= attenuation;
-    specular *= attenuation;   
+    specular *= attenuation;
+
     float theta = dot(lightDir, normalize(-light.direction));
-    
-    if(theta > light.cutOff)
+    float epsilon   = light.innerCutOff - light.outerCutOff;
+    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);    
+
+    diffuse  *= intensity;
+    specular *= intensity;
+
+    if(theta > light.outerCutOff)
     {
         FragColor = vec4(ambient + diffuse + specular, 1.0);
     }

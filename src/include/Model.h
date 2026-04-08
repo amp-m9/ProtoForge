@@ -121,7 +121,8 @@ class Model
         {
             ObjectShader->SetVec4("light.position", SceneLight->GetPosition());
             ObjectShader->SetVec3("light.direction", SceneLight->Direction);
-            ObjectShader->SetFloat("light.cutOff", SceneLight->GetCutOff());
+            ObjectShader->SetFloat("light.innerCutOff", SceneLight->GetInnerCutOff());
+            ObjectShader->SetFloat("light.outerCutOff", SceneLight->GetOuterCutOff());
             ObjectShader->SetVec3("light.ambient", SceneLight->Ambient);
             ObjectShader->SetVec3("light.diffuse", SceneLight->Diffuse);
             ObjectShader->SetVec3("light.specular", SceneLight->Specular);
