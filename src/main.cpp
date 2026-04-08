@@ -16,6 +16,7 @@
 #include "Camera.h"
 #include "Helpers.h"
 Camera* MainCam;
+bool bMouseCaptured = true;
 
 void FramebufferSizeCallback(GLFWwindow* Window, int width, int height)
 {
@@ -28,11 +29,29 @@ void ProcessInput(GLFWwindow* Window)
     {
         glfwSetWindowShouldClose(Window, true);
     }
+
+    // if((glfwGetKey(Window, GLFW_KEY_F1) & glfwGetKey(Window, GLFW_KEY_F1)  == GLFW_PRESS) && bMouseCaptured)
+    // {
+    //     glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    //     bMouseCaptured = false;
+    // }
 }
 
 void ScrollCallback(GLFWwindow* Window, double InXOffSet, double InYOffSet)
 {
-    MainCam->HandleMouseScroll(InXOffSet, InYOffSet);
+    if(bMouseCaptured)
+    {
+        MainCam->HandleMouseScroll(InXOffSet, InYOffSet);
+    }
+}
+
+void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && !bMouseCaptured) 
+    {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_CAPTURED);
+        bMouseCaptured = true;
+    }
 }
 
 int main()
@@ -105,6 +124,8 @@ int main()
 
     Light* LightPtr = new Light();
     LightPtr->Position = LightModel.GetPosition();
+    LightPtr->Type = LightType::SpotLight;
+    LightPtr->Direction = glm::vec3(-0.2f, -1.0f, -0.3f);
 
     MainCam = new Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV,
                          (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f);
@@ -119,7 +140,25 @@ int main()
     glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(Window, MouseCallback);
     glfwSetScrollCallback(Window, ScrollCallback);
+    glfwSetMouseButtonCallback(Window, MouseButtonCallback);
     glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    
+    LightPtr->Linear = .0f;
+    LightPtr->Quadratic = .0f;
+
+    const glm::vec3 cubePositions[] = 
+    {
+        glm::vec3( 0.0f,  0.0f,  0.0f),
+        glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f,  2.0f, -2.5f),
+        glm::vec3( 1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
 
     while (!glfwWindowShouldClose(Window))
     {
@@ -127,13 +166,27 @@ int main()
         LastTime = glfwGetTime();
 
         ProcessInput(Window);
-        MainCam->ProcessInput(Window, DeltaTime);
+        if (bMouseCaptured)
+        {
+            MainCam->ProcessInput(Window, DeltaTime);
+        }
+
         BoxModel.SetShaderUniform<glm::vec3>("viewPos", MainCam->GetPosition());
 
         glClearColor(0.f, 0.f, 0.f, 1.0f);
         glClear(ClearMask);
+        
+        LightPtr->Position = MainCam->GetPosition();
+        LightPtr->Direction = MainCam->GetForward(); 
+        // LightPtr->Direction = glm::lookAt(MainCam->GetPosition(), MainCam->GetPosition() + MainCam->GetForward(), MainCam->GetUp())
 
-        BoxModel.Draw(MainCam, LightPtr);
+        for(unsigned int i = 0; i<10; i++)
+        {
+            BoxModel.SetPosition(cubePositions[i]);
+            BoxModel.SetRotation(20.0f * i, 16.0f * i, 60.0f * i);
+            BoxModel.Draw(MainCam, LightPtr);
+        }
+
         LightModel.Draw(MainCam);
 
         glfwSwapBuffers(Window);
@@ -178,5 +231,8 @@ bool LoadTexture(const char* fileLocation, unsigned int& TextureID, const bool b
 
 void MouseCallback(GLFWwindow* Window, double InXPos, double InYPos)
 {
-    MainCam->HandleMouseMove(InXPos, InYPos, DeltaTime);
+    if(bMouseCaptured)
+    {
+        MainCam->HandleMouseMove(InXPos, InYPos, DeltaTime);
+    }
 }

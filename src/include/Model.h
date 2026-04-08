@@ -6,6 +6,7 @@
 #include "Helpers.h"
 #include "Shader.h"
 #include "Camera.h"
+#include "Light.h"
 
 // clang-format off
 // Specialisations for each type
@@ -49,13 +50,6 @@ struct Material
     float Shininess = 32.f;
 };
 
-struct Light 
-{
-    glm::vec3 Position {0.f};
-    glm::vec3 ambient{0.2f, 0.2f, 0.2f};
-    glm::vec3 diffuse{0.5f, 0.5f, 0.5f};
-    glm::vec3 specular{1.f};
-};
 
 struct VAOData
 {
@@ -63,7 +57,7 @@ struct VAOData
     std::vector<VertexAttributeBase> Attributes;
 };
 
-enum TextureType
+enum class TextureType 
 {
     Diffuse,
     Specular
@@ -109,23 +103,31 @@ class Model
     const glm::vec3& GetScale() { return Scale; }
 
     void SetPosition(float X, float Y, float Z) { Position = glm::vec3(X, Y, Z); }
+    void SetPosition(glm::vec3 pos) { Position = pos; }
     void SetRotation(float X, float Y, float Z) { Rotation = glm::vec3(X, Y, Z); }
+    void SetRotation(glm::vec3 rot) { Rotation = rot; }
     void SetScale(float X, float Y, float Z) { Scale = glm::vec3(X, Y, Z); }
+    void SetScale(glm::vec3 scl) { Scale = scl; }
 
     void Draw(Camera* Camera, Light* SceneLight = nullptr)
     {
-        ObjectShader->use();
-        ObjectShader->setMat4("projection", Camera->GetProjectionMatrix());
-        ObjectShader->setMat4("view", Camera->GetViewMatrix());
-        ObjectShader->setMat4("model", GetModelMatrix());
-        ObjectShader->setMat3("normalMatrix", GetNormalMatrix());
+        ObjectShader->Use();
+        ObjectShader->SetMat4("projection", Camera->GetProjectionMatrix());
+        ObjectShader->SetMat4("view", Camera->GetViewMatrix());
+        ObjectShader->SetMat4("model", GetModelMatrix());
+        ObjectShader->SetMat3("normalMatrix", GetNormalMatrix());
 
         if(SceneLight)
         {
-            ObjectShader->setVec3("light.position", SceneLight->Position);
-            ObjectShader->setVec3("light.ambient", SceneLight->ambient);
-            ObjectShader->setVec3("light.diffuse", SceneLight->diffuse);
-            ObjectShader->setVec3("light.specular", SceneLight->specular);
+            ObjectShader->SetVec4("light.position", SceneLight->GetPosition());
+            ObjectShader->SetVec3("light.direction", SceneLight->Direction);
+            ObjectShader->SetFloat("light.cutOff", SceneLight->GetCutOff());
+            ObjectShader->SetVec3("light.ambient", SceneLight->Ambient);
+            ObjectShader->SetVec3("light.diffuse", SceneLight->Diffuse);
+            ObjectShader->SetVec3("light.specular", SceneLight->Specular);
+            ObjectShader->SetFloat("light.constant", SceneLight->Constant);
+            ObjectShader->SetFloat("light.linear", SceneLight->Linear);
+            ObjectShader->SetFloat("light.quadratic", SceneLight->Quadratic);
         }
 
         if (MaterialPtr)
@@ -150,8 +152,13 @@ class Model
     glm::mat4 GetModelMatrix()
     {
         glm::mat4 model = glm::mat4(1.0f);
+
         model = glm::translate(model, Position);
         model = glm::scale(model, Scale);
+        model = glm::rotate(model, glm::radians(Rotation.x), glm::vec3(1.f, 0.f, 0.f));
+        model = glm::rotate(model, glm::radians(Rotation.y), glm::vec3(0.f, 1.f, 0.f));
+        model = glm::rotate(model, glm::radians(Rotation.z), glm::vec3(0.f, 0.f, 1.f));
+
         return model;
     };
 
@@ -168,22 +175,22 @@ class Model
     
     void UpdateMaterialUniforms()
     {
-        ObjectShader->use();
-        ObjectShader->setVec3("material.ambient", MaterialPtr->Ambient);
-        ObjectShader->setVec3("material.diffuse", MaterialPtr->Diffuse);
-        ObjectShader->setVec3("material.specular", MaterialPtr->Specular);
-        ObjectShader->setFloat("material.shininess", MaterialPtr->Shininess);
-        ObjectShader->setBool("material.bUseDiffuseMap", MaterialPtr->bUseDiffuseMap);
-        ObjectShader->setBool("material.bUseSpecularMap", MaterialPtr->bUseSpecularMap);
+        ObjectShader->Use();
+        ObjectShader->SetVec3("material.ambient", MaterialPtr->Ambient);
+        ObjectShader->SetVec3("material.diffuse", MaterialPtr->Diffuse);
+        ObjectShader->SetVec3("material.specular", MaterialPtr->Specular);
+        ObjectShader->SetFloat("material.shininess", MaterialPtr->Shininess);
+        ObjectShader->SetBool("material.bUseDiffuseMap", MaterialPtr->bUseDiffuseMap);
+        ObjectShader->SetBool("material.bUseSpecularMap", MaterialPtr->bUseSpecularMap);
         
         if(MaterialPtr->bUseDiffuseMap)
         {
-            ObjectShader->setInt("material.DiffuseMap", 0);
+            ObjectShader->SetInt("material.DiffuseMap", 0);
         }
 
         if(MaterialPtr->bUseSpecularMap)
         {
-            ObjectShader->setInt("material.SpecularMap", 1);
+            ObjectShader->SetInt("material.SpecularMap", 1);
         }
 
     };
@@ -251,26 +258,26 @@ class Model
 
 template <> const void Model::SetShaderUniform<glm::mat4>(const std::string& name, const glm::mat4& v)
 {
-    ObjectShader->use();
-    ObjectShader->setMat4(name, v);
+    ObjectShader->Use();
+    ObjectShader->SetMat4(name, v);
 }
 
 template <> const void Model::SetShaderUniform<glm::mat3>(const std::string& name, const glm::mat3& v)
 {
-    ObjectShader->use();
-    ObjectShader->setMat3(name, v);
+    ObjectShader->Use();
+    ObjectShader->SetMat3(name, v);
 }
 
 template <> const void Model::SetShaderUniform<glm::vec4>(const std::string& name, const glm::vec4& v)
 {
-    ObjectShader->use();
-    ObjectShader->setVec4(name, v);
+    ObjectShader->Use();
+    ObjectShader->SetVec4(name, v);
 }
 
 template <> const void Model::SetShaderUniform<glm::vec3>(const std::string& name, const glm::vec3& v)
 {
-    ObjectShader->use();
-    ObjectShader->setVec3(name, v);
+    ObjectShader->Use();
+    ObjectShader->SetVec3(name, v);
 }
 
 namespace DefaultModels

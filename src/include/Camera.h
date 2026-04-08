@@ -17,6 +17,8 @@ class Camera
     // Returns perspective projection matrix using the camera's FOV, aspect ratio, near plane and far plane.
     const glm::mat4& GetProjectionMatrix() const { return ProjectionMatrix; }
     const glm::vec3& GetPosition() const { return Position; }
+    const glm::vec3& GetForward() const { return CamForward; }
+    const glm::vec3& GetUp() const { return CamUp; }
     
     void ProcessInput(GLFWwindow* Window, float DeltaTime)
     {
