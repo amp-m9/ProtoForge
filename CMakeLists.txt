@@ -42,6 +42,14 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(glm)
 
+FetchContent_Declare(
+	assimp
+	GIT_REPOSITORY	https://github.com/assimp/assimp.git
+	GIT_TAG 	e0b5234  #refs/tags/6.0.4
+)
+
+FetchContent_MakeAvailable(assimp)
+
 add_executable(${PROJECT_NAME} src/main.cpp ${EXTERNAL_LIBS}/glad/src/glad.c ${LIB_SOURCES})
 
 configure_file(
@@ -57,6 +65,7 @@ target_link_libraries(${PROJECT_NAME}
         glfw
         OpenGL::GL
         glm::glm
+        assimp
 )
 
 target_include_directories(${PROJECT_NAME} 
