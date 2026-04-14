@@ -1,33 +1,31 @@
 #pragma once
 #include <glm/glm.hpp>
 
-enum class LightType
-{
-    PointLight,
-    DirectionalLight,
-    SpotLight
-};
-
 struct Light 
 {
-    LightType Type = LightType::SpotLight;
-    glm::vec3 Direction {-1.0f, 0.0f, 0.0f};
-    glm::vec3 Position {0.f};
-
+    virtual ~Light() = default;
+public:
     glm::vec3 Ambient{0.2f, 0.2f, 0.2f};
     glm::vec3 Diffuse{0.5f, 0.5f, 0.5f};
     glm::vec3 Specular{1.f};
-    
+};
+
+struct DirectionalLight : public Light
+{
+    glm::vec3 Direction {-1.0f, 0.0f, 0.0f};
+};
+
+struct PointLight : public Light
+{
+public:
+    glm::vec3 Position {0.f};
     float Constant = 1.0f;
     float Linear = 0.09f;
     float Quadratic = 0.032f;
+};
+
+struct SpotLight : public PointLight, public DirectionalLight
+{
     float InnerCutOff = glm::cos(glm::radians(12.5f));
     float OuterCutOff = glm::cos(glm::radians(17.5f));
-
-    glm::vec4 GetPosition()
-    {
-        return glm::vec4(Position, Type == LightType::PointLight ? 1.f:0 );
-    }
-    float GetInnerCutOff() {return Type != LightType::SpotLight ? glm::cos(glm::radians(360.0f)) : InnerCutOff;};
-    float GetOuterCutOff() {return Type != LightType::SpotLight ? glm::cos(glm::radians(360.0f)) : OuterCutOff;};
 };

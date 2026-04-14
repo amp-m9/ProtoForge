@@ -122,11 +122,34 @@ int main()
     LightModel.SetPosition(1.f, 1.f, -2.0f);
     LightModel.SetScale(.2f, .2f, .2f);
 
-    Light* LightPtr = new Light();
-    LightPtr->Position = LightModel.GetPosition();
-    LightPtr->Type = LightType::SpotLight;
-    LightPtr->Direction = glm::vec3(-0.2f, -1.0f, -0.3f);
+    DirectionalLight* DirLight = new DirectionalLight();
+    DirLight->Direction = glm::vec3(-0.2f, -1.0f, -0.3f);
 
+    glm::vec3 pointLightPositions[] = {
+    	glm::vec3( 0.7f,  0.2f,  2.0f),
+	    glm::vec3( 2.3f, -3.3f, -4.0f),
+	    glm::vec3(-4.0f,  2.0f, -12.0f),
+	    glm::vec3( 0.0f,  0.0f, -3.0f)
+    };  
+
+    glm::vec3 pointLightColours[] = {
+    	glm::vec3( 0.f,  0.f,  1.0f),
+	    glm::vec3( 0.0f, 1.0f, 0.0f),
+	    glm::vec3(1.0f,  .0f, .0f),
+	    glm::vec3( 1.0f)
+    };  
+
+    std::vector<PointLight*> PointLights;
+    PointLights.resize(4);\
+
+    for(int i = 0; i<4; i ++)
+    {
+        PointLights[i] = new PointLight();
+        PointLights[i]->Position = pointLightPositions[i];
+        PointLights[i]->Ambient = pointLightColours[i];
+        PointLights[i]->Diffuse = pointLightColours[i];
+    }
+    
     MainCam = new Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV,
                          (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f);
 
@@ -143,9 +166,6 @@ int main()
     glfwSetMouseButtonCallback(Window, MouseButtonCallback);
     glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);
     
-    LightPtr->Linear = .0f;
-    LightPtr->Quadratic = .0f;
-
     const glm::vec3 cubePositions[] = 
     {
         glm::vec3( 0.0f,  0.0f,  0.0f),
@@ -176,18 +196,20 @@ int main()
         glClearColor(0.f, 0.f, 0.f, 1.0f);
         glClear(ClearMask);
         
-        LightPtr->Position = MainCam->GetPosition();
-        LightPtr->Direction = MainCam->GetForward(); 
-        // LightPtr->Direction = glm::lookAt(MainCam->GetPosition(), MainCam->GetPosition() + MainCam->GetForward(), MainCam->GetUp())
 
         for(unsigned int i = 0; i<10; i++)
         {
             BoxModel.SetPosition(cubePositions[i]);
             BoxModel.SetRotation(20.0f * i, 16.0f * i, 60.0f * i);
-            BoxModel.Draw(MainCam, LightPtr);
+            BoxModel.Draw(MainCam, DirLight, PointLights);
         }
 
-        LightModel.Draw(MainCam);
+        for(unsigned int i = 0; i<4; ++i)
+        {
+            LightModel.SetPosition(pointLightPositions[i]);
+            LightModel.SetShaderUniform<glm::vec3>("lightColor",pointLightColours[i]);
+            LightModel.Draw(MainCam, nullptr, {});
+        }
 
         glfwSwapBuffers(Window);
         glfwPollEvents();

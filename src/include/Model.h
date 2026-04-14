@@ -1,6 +1,7 @@
 #pragma once
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <format>
 #include <vector>
 
 #include "Helpers.h"
@@ -109,7 +110,7 @@ class Model
     void SetScale(float X, float Y, float Z) { Scale = glm::vec3(X, Y, Z); }
     void SetScale(glm::vec3 scl) { Scale = scl; }
 
-    void Draw(Camera* Camera, Light* SceneLight = nullptr)
+    void Draw(Camera* Camera, DirectionalLight* DirLight, std::vector<PointLight*> PointLights)
     {
         ObjectShader->Use();
         ObjectShader->SetMat4("projection", Camera->GetProjectionMatrix());
@@ -117,18 +118,31 @@ class Model
         ObjectShader->SetMat4("model", GetModelMatrix());
         ObjectShader->SetMat3("normalMatrix", GetNormalMatrix());
 
-        if(SceneLight)
+        if(DirLight)
         {
-            ObjectShader->SetVec4("light.position", SceneLight->GetPosition());
-            ObjectShader->SetVec3("light.direction", SceneLight->Direction);
-            ObjectShader->SetFloat("light.innerCutOff", SceneLight->GetInnerCutOff());
-            ObjectShader->SetFloat("light.outerCutOff", SceneLight->GetOuterCutOff());
-            ObjectShader->SetVec3("light.ambient", SceneLight->Ambient);
-            ObjectShader->SetVec3("light.diffuse", SceneLight->Diffuse);
-            ObjectShader->SetVec3("light.specular", SceneLight->Specular);
-            ObjectShader->SetFloat("light.constant", SceneLight->Constant);
-            ObjectShader->SetFloat("light.linear", SceneLight->Linear);
-            ObjectShader->SetFloat("light.quadratic", SceneLight->Quadratic);
+            ObjectShader->SetVec3("dirLight.direction", DirLight->Direction);
+            ObjectShader->SetVec3("dirLight.ambient", DirLight->Ambient);
+            ObjectShader->SetVec3("dirLight.diffuse", DirLight->Diffuse);
+            ObjectShader->SetVec3("dirLight.specular", DirLight->Specular);
+        }
+
+        if(PointLights.size()>0)
+        {
+            for(int i = 0; i<PointLights.size(); i ++)
+            {
+                PointLight* InPointLight = PointLights[i];
+                std::string PointLightStr {"pointLights[" + std::to_string(i) + "]"};
+
+                ObjectShader->SetVec3(PointLightStr + ".position", InPointLight->Position);
+
+                ObjectShader->SetVec3(PointLightStr + ".ambient", InPointLight->Ambient);
+                ObjectShader->SetVec3(PointLightStr + ".diffuse", InPointLight->Diffuse);
+                ObjectShader->SetVec3(PointLightStr + ".specular", InPointLight->Specular);
+
+                ObjectShader->SetFloat(PointLightStr + ".constant", InPointLight->Constant);
+                ObjectShader->SetFloat(PointLightStr + ".linear", InPointLight->Linear);
+                ObjectShader->SetFloat(PointLightStr + ".quadratic", InPointLight->Quadratic);
+            }
         }
 
         if (MaterialPtr)
