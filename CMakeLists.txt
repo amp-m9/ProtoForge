@@ -30,6 +30,7 @@ if(GROUPED_LIBS)
 endif(GROUPED_LIBS)
 
 file(GLOB LIB_SOURCES "${CMAKE_SOURCE_DIR}/lib/*.cpp")
+file(GLOB SRC_FILES "src/*.cpp")
 
 add_subdirectory ( ${GLFW_LIB} mbuild_glfw)
 find_package(OpenGL REQUIRED)
@@ -50,7 +51,7 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(assimp)
 
-add_executable(${PROJECT_NAME} src/main.cpp ${EXTERNAL_LIBS}/glad/src/glad.c ${LIB_SOURCES})
+add_executable(${PROJECT_NAME} ${SRC_FILES} ${EXTERNAL_LIBS}/glad/src/glad.c ${LIB_SOURCES})
 
 configure_file(
     ${CMAKE_SOURCE_DIR}/cmake/root_directory.h.in
