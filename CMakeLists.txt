@@ -29,7 +29,7 @@ if(GROUPED_LIBS)
     cmake_print_variables(${GLAD_LIB} ${GLFW_LIB})
 endif(GROUPED_LIBS)
 
-file(GLOB LIB_SOURCES "${CMAKE_SOURCE_DIR}/src/lib/*.cpp")
+file(GLOB LIB_SOURCES "${CMAKE_SOURCE_DIR}/lib/*.cpp")
 
 add_subdirectory ( ${GLFW_LIB} mbuild_glfw)
 find_package(OpenGL REQUIRED)
@@ -45,7 +45,7 @@ FetchContent_MakeAvailable(glm)
 FetchContent_Declare(
 	assimp
 	GIT_REPOSITORY	https://github.com/assimp/assimp.git
-	GIT_TAG 	e0b5234  #refs/tags/6.0.4
+	GIT_TAG 	e0b5234  #refs/tags/6.0.4 
 )
 
 FetchContent_MakeAvailable(assimp)
@@ -72,7 +72,7 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE
         ${GLAD_LIB}/include
         ${GLFW_LIB}/include
-        ${CMAKE_SOURCE_DIR}/src/include
+        ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/cmake
         ${CMAKE_BINARY_DIR}/generated
 )

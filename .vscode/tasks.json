@@ -12,9 +12,9 @@
 			"label": "Sync Assets",
 			"type": "shell",
 			"windows": {
-				"command": "wsl rsync -avu --delete src/assets build"
+				"command": "wsl rsync -avu --delete assets build"
 			},
-			"command": "rsync -avu --delete src/assets build"
+			"command": "rsync -avu --delete assets build"
 		},
 		{
 			"label": "Build and Move Assets",

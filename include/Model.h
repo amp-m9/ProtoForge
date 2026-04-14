@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <format>
 #include <vector>
-
+#include <assimp/Importer.hpp>
 #include "Helpers.h"
 #include "Shader.h"
 #include "Camera.h"
