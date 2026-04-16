@@ -68,8 +68,8 @@ class Model
 {
   private:
     unsigned int VBO, VAO;
-    Shader* ObjectShader;
-    Material* MaterialPtr;
+    Shader* ObjectShader = nullptr;
+    Material* MaterialPtr = nullptr;
     
     glm::vec3 Position{glm::vec3(0.f)};
     glm::vec3 Rotation{glm::vec3(0.f)};
@@ -145,7 +145,7 @@ class Model
             }
         }
 
-        if (MaterialPtr)
+        if (MaterialPtr != nullptr)
         {
             if(MaterialPtr->bUseDiffuseMap)
             {
