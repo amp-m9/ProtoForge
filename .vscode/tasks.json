@@ -12,15 +12,15 @@
 			"label": "Sync Assets",
 			"type": "shell",
 			"windows": {
-				"command": "wsl rsync -avu --delete assets build"
+				"command": "mkdir -p build; wsl rsync -avu --delete assets build",
 			},
-			"command": "rsync -avu --delete assets build"
+			"command": "mkdir -p build && rsync -avu --delete assets build"
 		},
 		{
 			"label": "Build and Move Assets",
 			"dependsOn": [
+				"Sync Assets",
 				"CMake: build",
-				"Sync Assets"
 			],
 			"dependsOrder": "sequence",
 			"type": "shell",
