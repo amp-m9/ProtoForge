@@ -12,6 +12,7 @@
 #include "Shader.h"
 #include "Utils.h"
 #include "main.h"
+#include "DefaultModel.h"
 #include "Model.h"
 #include "Camera.h"
 #include "Helpers.h"
@@ -110,7 +111,7 @@ int main()
     BoxVAOData.Attributes.emplace_back(normalAttribute);
     BoxVAOData.Attributes.emplace_back(textureAttribute);
 
-    Model BoxModel = Model(DefaultModels::TexturedCube, sizeof(DefaultModels::TexturedCube), BoxVAOData, &LitObjectShader);
+    DefaultModel BoxModel = DefaultModel(DefaultModels::TexturedCube, sizeof(DefaultModels::TexturedCube), BoxVAOData, &LitObjectShader);
     BoxModel.SetShaderUniform<glm::vec3>("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 
     Material* BoxMaterial = new Material();
@@ -118,7 +119,7 @@ int main()
     BoxModel.LoadTexture("assets/textures/woodAndSteelContainer_diffuse.png", true, false, TextureType::Diffuse);
     BoxModel.LoadTexture("assets/textures/woodAndSteelContainer_specular.png", true, false, TextureType::Specular);
 
-    Model LightModel = Model(DefaultModels::TexturedCube, sizeof(DefaultModels::TexturedCube), BoxVAOData, &WhiteLightShader);
+    DefaultModel LightModel = DefaultModel(DefaultModels::TexturedCube, sizeof(DefaultModels::TexturedCube), BoxVAOData, &WhiteLightShader);
     LightModel.SetPosition(1.f, 1.f, -2.0f);
     LightModel.SetScale(.2f, .2f, .2f);
 

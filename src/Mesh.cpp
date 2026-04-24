@@ -8,10 +8,67 @@ Mesh::Mesh(std::vector<Vertex> InVertices, std::vector<unsigned int> InIndices, 
 
 void Mesh::Draw(Shader& shader) 
 {
+    unsigned int DiffuseNr = 1;
+    unsigned int SpecularNr = 1;
 
+    for (unsigned int i = 0; i<mTextures.size(); i++)
+    {
+        glActiveTexture(GL_TEXTURE0 + i);
+
+        std::string Number;
+        std::string Name;
+
+        if(Name == TEXTURE_DIFFUSE)
+        {
+            Number = std::to_string(DiffuseNr++);
+        }
+        else if (Name == TEXTURE_SPECULAR)
+        {
+            Number = std::to_string(SpecularNr++);
+        }
+        else
+        {
+            //THROW/LOG ERROR
+            return;
+        }
+
+        shader.SetInt(("material" + Name + Number).c_str(), i);
+        glBindTexture(GL_TEXTURE_2D, mTextures[i].mID);
+    }
+
+    glActiveTexture(GL_TEXTURE0);
+
+    //draw
+    glBindVertexArray(mVAO);
+    glDrawElements(GL_TRIANGLES, mIndices.size(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 }
 
 void Mesh::SetupMesh() 
 {
+    glGenVertexArrays(1, &mVAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &mEBO);
 
+    glBindVertexArray(mVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(Vertex), &mVertices[0], GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndices.size() * sizeof(unsigned int), &mIndices[0], GL_STATIC_DRAW);
+    
+    //vertex Positions
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) 0);
+
+    //vertex normals
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, mNormal)); 
+
+    //vertex texture coord
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, mTexCoords)); 
+
+    glBindVertexArray(0);
 }

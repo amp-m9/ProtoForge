@@ -9,14 +9,36 @@ struct Vertex
 {
     glm::vec3 mPosition;
     glm::vec3 mNormal;
-    glm::vec2 TexCoords;
+    glm::vec2 mTexCoords;
+
+    void SetPosition(aiVector3D* InVector)
+    {
+        mPosition.x = InVector->x;
+        mPosition.y = InVector->y;
+        mPosition.z = InVector->z;
+    }
+    void SetTexCoords(aiVector3D* InTexCoords)
+    {
+        mTexCoords.x = InTexCoords->x;
+        mTexCoords.y = InTexCoords->y;
+    }
+    void SetNormal(aiVector3D* InNormal)
+    {
+        mPosition.x = InNormal->x;
+        mPosition.y = InNormal->y;
+        mPosition.z = InNormal->z;
+    }
 };
 
 struct Texture
 {
-    unsigned int id;
-    std::string type;
+    unsigned int mID;
+    std::string mType;
+    std::string mPath;
 };
+
+const std::string TEXTURE_DIFFUSE = "texture_diffuse";
+const std::string TEXTURE_SPECULAR = "texture_specular";
 
 class Mesh
 {
@@ -29,7 +51,7 @@ class Mesh
         void Draw(Shader &shader);
     private:
         //  render data
-        unsigned int VAO, VBO, EBO;
+        unsigned int mVAO, VBO, mEBO;
 
         void SetupMesh();
 };
