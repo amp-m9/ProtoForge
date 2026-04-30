@@ -101,6 +101,7 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial* mat, aiTextureType 
         mat->GetTexture(textureType, i, &Str);
         // check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
         bool bSkip = false;
+        
         for(unsigned int j = 0; j < mTextures.size(); j++)
         {
             if(std::strcmp(mTextures[j].mPath.data(), Str.C_Str()) == 0)
@@ -110,6 +111,7 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial* mat, aiTextureType 
                 break;
             }
         }
+
         if(!bSkip)
         {   // if texture hasn't been loaded already, load it
             Texture texture;

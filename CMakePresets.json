@@ -2,14 +2,17 @@
     "version": 8,
     "configurePresets": [
         {
-            "name": "Ninja",
-            "displayName": "Custom configure preset",
-            "description": "Sets Ninja generator, build and install directory",
+            "name": "Custom with Ninja",
+            "displayName": "Custom with Ninja",
+            "description": "Using compilers: C = C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/Llvm/x64/bin/clang.exe, CXX = C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/Llvm/x64/bin/clang.exe",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "binaryDir": "${sourceDir}/build",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
+                "CMAKE_C_COMPILER": "C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/Llvm/x64/bin/clang.exe",
+                "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/Llvm/x64/bin/clang.exe",
+                "CMAKE_RC_COMPILER": "rc.exe",
+                "CMAKE_BUILD_TYPE": "Debug"
             }
         }
     ]

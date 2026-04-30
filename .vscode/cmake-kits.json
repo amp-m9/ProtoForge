@@ -1,0 +1,14 @@
+[
+ {
+   "name": "Custom with Ninja",
+    "isTrusted": true,
+    "compilers": {
+      "C": "C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/Llvm/x64/bin/clang.exe",
+      "CXX": "C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/Llvm/x64/bin/clang.exe"
+    },
+   "preferredGenerator": { "name": "Ninja" },
+   "environmentVariables": {
+     "PATH": "C:/Windows/ninja.exe;${env:PATH}"
+   }
+ }
+]
