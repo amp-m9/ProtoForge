@@ -2,6 +2,7 @@
 
 #include "Shader.h"
 #include <glm/glm.hpp>
+#include <assimp/mesh.h>
 #include <string>
 #include <vector>
 
@@ -24,9 +25,9 @@ struct Vertex
     }
     void SetNormal(aiVector3D* InNormal)
     {
-        mPosition.x = InNormal->x;
-        mPosition.y = InNormal->y;
-        mPosition.z = InNormal->z;
+        mNormal.x = InNormal->x;
+        mNormal.y = InNormal->y;
+        mNormal.z = InNormal->z;
     }
 };
 

@@ -1,4 +1,8 @@
 #include <cstddef>
+#include <iostream>
+#include <glad/glad.h>
+#include "stb_image.h"
+
 template <typename T, size_t N> // returns size of C-style arrays
 unsigned int Length(T (&Array)[N])
 {
@@ -10,7 +14,7 @@ unsigned int Length(T (&Array)[N])
     return 0;
 }
 
-unsigned int TextureFromFile(std::string fileName, std::string& directory, bool gamma = false)
+unsigned int inline TextureFromFile(std::string fileName, std::string& directory, bool gamma = false)
 {
     std::string Path = directory + '/' + fileName;
 
@@ -30,6 +34,8 @@ unsigned int TextureFromFile(std::string fileName, std::string& directory, bool 
             Format = GL_RGB;
         else if (NrComponents == 4)
             Format = GL_RGBA;
+        else
+            std::cout << "Texture format unknown." << std::endl;
 
         glBindTexture(GL_TEXTURE_2D, TextureID);
         glTexImage2D(GL_TEXTURE_2D, 0, Format, Width, Height, 0, Format, GL_UNSIGNED_BYTE, Data);
