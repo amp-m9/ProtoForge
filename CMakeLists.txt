@@ -51,6 +51,11 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(assimp)
 
+
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+FetchContent_MakeAvailable(json)
+
+
 add_executable(${PROJECT_NAME} ${SRC_FILES} ${EXTERNAL_LIBS}/glad/src/glad.c ${LIB_SOURCES})
 
 configure_file(
@@ -67,6 +72,7 @@ target_link_libraries(${PROJECT_NAME}
         OpenGL::GL
         glm::glm
         assimp
+        nlohmann_json::nlohmann_json
 )
 
 target_include_directories(${PROJECT_NAME} 
