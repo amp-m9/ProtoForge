@@ -86,12 +86,9 @@ int main()
     Shader LitObjectShader("assets/shaders/01_Lighting/00_Colours/colours.vs", "assets/shaders/01_Lighting/00_Colours/colours.fs");
     Shader WhiteLightShader("assets/shaders/01_Lighting/00_Colours/colours.vs", "assets/shaders/01_Lighting/00_Colours/whiteLight.fs");
 
-    glm::vec3 cubePosition = glm::vec3(0.0f, 0.0f, 0.0f);
 
-    unsigned int indices[] = {0, 1, 2, 1, 2, 3};
-
-    VAOData BoxVAOData;
-    BoxVAOData.Stride = 8 * sizeof(float);
+    VAOData LightVAOData;
+    LightVAOData.Stride = 8 * sizeof(float);
 
     VertexAttribute<float> posAttr, normalAttribute, textureAttribute;
     posAttr.CountAtPosition = 3;
@@ -107,19 +104,12 @@ int main()
     textureAttribute.Position = 2;  
     textureAttribute.Offset = posAttr.GetSize() + normalAttribute.GetSize();
 
-    BoxVAOData.Attributes.emplace_back(posAttr);
-    BoxVAOData.Attributes.emplace_back(normalAttribute);
-    BoxVAOData.Attributes.emplace_back(textureAttribute);
+    LightVAOData.Attributes.emplace_back(posAttr);
+    LightVAOData.Attributes.emplace_back(normalAttribute);
+    LightVAOData.Attributes.emplace_back(textureAttribute);
 
-    DefaultModel BoxModel = DefaultModel(DefaultModels::TexturedCube, sizeof(DefaultModels::TexturedCube), BoxVAOData, &LitObjectShader);
-    BoxModel.SetShaderUniform<glm::vec3>("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-
-    Material* BoxMaterial = new Material();
-    BoxModel.SetMaterial(BoxMaterial);
-    BoxModel.LoadTexture("assets/textures/woodAndSteelContainer_diffuse.png", true, false, TextureType::Diffuse);
-    BoxModel.LoadTexture("assets/textures/woodAndSteelContainer_specular.png", true, false, TextureType::Specular);
-
-    DefaultModel LightModel = DefaultModel(DefaultModels::TexturedCube, sizeof(DefaultModels::TexturedCube), BoxVAOData, &WhiteLightShader);
+   
+    DefaultModel LightModel = DefaultModel(DefaultModels::TexturedCube, sizeof(DefaultModels::TexturedCube), LightVAOData, &WhiteLightShader);
     LightModel.SetPosition(1.f, 1.f, -2.0f);
     LightModel.SetScale(.2f, .2f, .2f);
 
@@ -141,7 +131,7 @@ int main()
     };  
 
     std::vector<PointLight*> PointLights;
-    PointLights.resize(4);\
+    PointLights.resize(4);
 
     for(int i = 0; i<4; i ++)
     {
@@ -181,28 +171,22 @@ int main()
         glm::vec3(-1.3f,  1.0f, -1.5f)
     };
 
+
+    stbi_set_flip_vertically_on_load(true);
+    Shader ModelShader("assets/shaders/03_Models/model_loading");
+    Model BackPackModel(FileSystem::getPath("assets/models/backpack/backpack.obj").c_str());
+    
     while (!glfwWindowShouldClose(Window))
     {
         DeltaTime = glfwGetTime() - LastTime;
         LastTime = glfwGetTime();
+        glClearColor(1.f, 1.f, 1.f, 1.0f);
+        glClear(ClearMask);
 
         ProcessInput(Window);
         if (bMouseCaptured)
         {
             MainCam->ProcessInput(Window, DeltaTime);
-        }
-
-        BoxModel.SetShaderUniform<glm::vec3>("viewPos", MainCam->GetPosition());
-
-        glClearColor(0.f, 0.f, 0.f, 1.0f);
-        glClear(ClearMask);
-        
-
-        for(unsigned int i = 0; i<10; i++)
-        {
-            BoxModel.SetPosition(cubePositions[i]);
-            BoxModel.SetRotation(20.0f * i, 16.0f * i, 60.0f * i);
-            BoxModel.Draw(MainCam, DirLight, PointLights);
         }
 
         for(unsigned int i = 0; i<4; ++i)
@@ -212,11 +196,11 @@ int main()
             LightModel.Draw(MainCam, nullptr, {});
         }
 
+        BackPackModel.Draw(*MainCam, ModelShader);
         glfwSwapBuffers(Window);
         glfwPollEvents();
     }
 
-    BoxModel.FreeAll();
 
     glfwTerminate();
     return 0;

@@ -20,6 +20,24 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
     CreateAndSetShaderProgram(VertexCodeCharArray, FragmentCodeCharArray);
 }
 
+Shader::Shader(const char* shaderNameWithoutExtension)
+{
+    std::string vertexPath = std::string(shaderNameWithoutExtension) + ".vs";
+    std::string fragmentPath = std::string(shaderNameWithoutExtension) + ".fs";
+
+    std::string VertexCode, FragmentCode;
+    bool bSuccessfulLoad = true;
+
+    bSuccessfulLoad &= LoadShaderFileAtPath(FileSystem::getPath(vertexPath).c_str(), VertexCode);
+    bSuccessfulLoad &= LoadShaderFileAtPath(FileSystem::getPath(fragmentPath).c_str(), FragmentCode);
+    assert(bSuccessfulLoad);
+
+    const char* VertexCodeCharArray = VertexCode.c_str();
+    const char* FragmentCodeCharArray = FragmentCode.c_str();
+
+    CreateAndSetShaderProgram(VertexCodeCharArray, FragmentCodeCharArray);
+}
+
 bool Shader::LoadShaderFileAtPath(const char* Path, std::string& Code)
 {
     std::ifstream ShaderFile;

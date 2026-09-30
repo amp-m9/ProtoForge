@@ -6,11 +6,24 @@
 #include <string>
 #include <vector>
 
+#define MAX_BONE_INFLUENCE 4
+#define TEXTURE_DIFFUSE "texture_diffuse"
+#define TEXTURE_SPECULAR "texture_specular"
+#define TEXTURE_NORMAL "texture_normal"
+#define TEXTURE_HEIGHT "texture_height"
+
 struct Vertex
 {
     glm::vec3 mPosition;
     glm::vec3 mNormal;
     glm::vec2 mTexCoords;
+    glm::vec3 mTangent;
+    glm::vec3 mBitangent;
+
+	//bone indexes which will influence this vertex
+	int m_BoneIDs[MAX_BONE_INFLUENCE];
+	//weights from each bone
+	float m_Weights[MAX_BONE_INFLUENCE];
 
     void SetPosition(aiVector3D* InVector)
     {
@@ -38,21 +51,21 @@ struct Texture
     std::string mPath;
 };
 
-const std::string TEXTURE_DIFFUSE = "texture_diffuse";
-const std::string TEXTURE_SPECULAR = "texture_specular";
-
 class Mesh
 {
+
     public: 
         std::vector<Vertex> mVertices;
         std::vector<unsigned int> mIndices;
         std::vector<Texture> mTextures;
-
+        unsigned int mVAO;
+    public:
         Mesh(std::vector<Vertex> InVertices, std::vector<unsigned int>InIndices, std::vector<Texture> InTextures);
         void Draw(Shader &shader);
+    
     private:
         //  render data
-        unsigned int mVAO, VBO, mEBO;
+        unsigned int mVBO, mEBO;
 
         void SetupMesh();
 };

@@ -14,6 +14,8 @@ class Shader
     unsigned int ID;
 
     Shader(const char* vertexPath, const char* fragmentPath);
+    Shader(const char* shaderNameWithoutExtension);
+
 
     void Use() { glUseProgram(ID); }; //  activates/set the shader as active.
     // utility uniform functions
