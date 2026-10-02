@@ -92,6 +92,7 @@ FetchContent_MakeAvailable(json)
 
 # OpenGL is provided by the operating system / graphics driver.
 # CMake handles the platform-specific library location.
+find_package(OpenGL REQUIRED)
 
 
 # ============================================================
