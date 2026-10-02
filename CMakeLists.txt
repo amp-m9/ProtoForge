@@ -1,9 +1,22 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.20)
+
+project(LearnOpenGL
+    VERSION 1.0
+    LANGUAGES C CXX
+)
+
+# ============================================================
+# Project configuration
+# ============================================================
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(FetchContent)
 include(CMakePrintHelpers)
-
-project(LearnOpenGL)
 
 file(STRINGS CMakeVariables.txt ConfigContents)
 foreach(NameAndValue ${ConfigContents})
@@ -18,68 +31,218 @@ foreach(NameAndValue ${ConfigContents})
   cmake_print_variables(${Name})
 endforeach()
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# ============================================================
+# Dependencies
+# ============================================================
 
-set(LOGL_ROOT "${CMAKE_BINARY_DIR}")
-if(GROUPED_LIBS)
-    cmake_print_variables(${GROUPED_LIBS})
-    set(GLAD_LIB ${EXTERNAL_LIBS}/glad)
-    set(GLFW_LIB ${EXTERNAL_LIBS}/glfw)    
-    cmake_print_variables(${GLAD_LIB} ${GLFW_LIB})
-endif(GROUPED_LIBS)
-
-file(GLOB LIB_SOURCES "${CMAKE_SOURCE_DIR}/lib/*.cpp")
-file(GLOB SRC_FILES "src/*.cpp")
-
-add_subdirectory ( ${GLFW_LIB} mbuild_glfw)
-find_package(OpenGL REQUIRED)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 FetchContent_Declare(
-	glm
-	GIT_REPOSITORY	https://github.com/g-truc/glm.git
-	GIT_TAG 	8d1fd52 #refs/tags/1.0.3
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.4
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(glfw)
+
+
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 1.0.3
+    GIT_SHALLOW TRUE
 )
 
 FetchContent_MakeAvailable(glm)
 
+
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+
+# IMPORTANT:
+# Let Assimp build its bundled zlib/minizip instead of requiring
+# unzip.h/minizip to already exist on the host machine.
+set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
+
 FetchContent_Declare(
-	assimp
-	GIT_REPOSITORY	https://github.com/assimp/assimp.git
+    assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
 	GIT_TAG 	e0b5234  #refs/tags/6.0.4 
+    GIT_SHALLOW TRUE
 )
 
 FetchContent_MakeAvailable(assimp)
 
 
-FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+FetchContent_Declare(
+    json
+    URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+)
+
 FetchContent_MakeAvailable(json)
 
 
-add_executable(${PROJECT_NAME} ${SRC_FILES} ${EXTERNAL_LIBS}/glad/src/glad.c ${LIB_SOURCES})
+# ============================================================
+# System dependencies
+# ============================================================
+
+# OpenGL is provided by the operating system / graphics driver.
+# CMake handles the platform-specific library location.
+
+
+# ============================================================
+# GLAD
+# ============================================================
+
+# GLAD is kept in the repository because it is generated code
+# specific to the OpenGL version/extensions used by this project.
+#
+# Expected structure:
+#
+# external/
+# └── glad/
+#     ├── include/
+#     │   └── glad/
+#     └── src/
+#         └── glad.c
+
+add_library(glad STATIC
+    ${GLAD_LIB}/src/glad.c
+)
+
+target_include_directories(glad
+    PUBLIC
+        "${GLAD_LIB}/include"
+)
+
+
+# ============================================================
+# Project source files
+# ============================================================
+
+file(GLOB_RECURSE PROJECT_SOURCES
+    CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib/*.cpp"
+)
+
+
+# ============================================================
+# Executable
+# ============================================================
+
+add_executable(${PROJECT_NAME}
+    ${PROJECT_SOURCES}
+)
+
+
+# ============================================================
+# Generated files
+# ============================================================
+
+set(GENERATED_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/generated"
+)
+
+file(MAKE_DIRECTORY "${GENERATED_DIR}")
 
 configure_file(
-    ${CMAKE_SOURCE_DIR}/cmake/root_directory.h.in
-    ${CMAKE_SOURCE_DIR}/cmake/root_directory.h
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/root_directory.h.in"
+    "${GENERATED_DIR}/root_directory.h"
     @ONLY
 )
 
-include_directories(${CMAKE_BINARY_DIR}/generated)
+
+# ============================================================
+# Include directories
+# ============================================================
+
+target_include_directories(${PROJECT_NAME}
+    PRIVATE
+
+        # Your project's headers
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+
+        # Your existing cmake headers
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+
+        # Generated headers
+        "${GENERATED_DIR}"
+)
+
+
+# ============================================================
+# Libraries
+# ============================================================
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
+
+        # Window/context creation
         glfw
+
+        # OpenGL loader
+        glad
+
+        # System OpenGL
         OpenGL::GL
+
+        # Mathematics
         glm::glm
+
+        # Model loading
         assimp
+
+        # JSON
         nlohmann_json::nlohmann_json
 )
 
-target_include_directories(${PROJECT_NAME} 
-    PRIVATE
-        ${GLAD_LIB}/include
-        ${GLFW_LIB}/include
-        ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/cmake
-        ${CMAKE_BINARY_DIR}/generated
-)
+
+# ============================================================
+# Compiler warnings
+# ============================================================
+
+if(MSVC)
+
+    target_compile_options(${PROJECT_NAME}
+        PRIVATE
+            /W4
+    )
+
+else()
+
+    target_compile_options(${PROJECT_NAME}
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+
+endif()
+
+
+# ============================================================
+# Platform-specific settings
+# ============================================================
+
+if(WIN32)
+
+    target_compile_definitions(${PROJECT_NAME}
+        PRIVATE
+            NOMINMAX
+            WIN32_LEAN_AND_MEAN
+    )
+
+elseif(UNIX AND NOT APPLE)
+
+    # Linux / other Unix-like systems
+
+elseif(APPLE)
+
+    # macOS
+
+endif()

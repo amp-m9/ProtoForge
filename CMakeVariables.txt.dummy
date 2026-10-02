@@ -1,12 +1,2 @@
-# EXTERNAL_LIBS Location with Glad and glfw top folders
-EXTERNAL_LIBS=D:\Libs 
-
-# used if all in same place (see above)
-# so will search using ${EXTERNAL_LIBS}/glad & ${EXTERNAL_LIBS}/glfw 
-GROUPED_LIBS=TRUE 
-
 # location of .../glad
 GLAD_LIB=""
-
-# location of .../glfw
-GLFW_LIB=""

@@ -12,7 +12,7 @@
 			"label": "Sync Assets",
 			"type": "shell",
 			"windows": {
-				"command": "mkdir -p build; wsl rsync -avu --delete assets build",
+				"command": "mkdir -p build; wsl rsync -avu --delete assets build"
 			},
 			"command": "mkdir -p build && rsync -avu --delete assets build"
 		},
@@ -20,7 +20,7 @@
 			"label": "Build and Move Assets",
 			"dependsOn": [
 				"Sync Assets",
-				"CMake: build",
+				"CMake: build"
 			],
 			"dependsOrder": "sequence",
 			"type": "shell",
@@ -30,6 +30,18 @@
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+		{
+			"type": "cmake",
+			"label": "CMake: clean rebuild",
+			"command": "cleanRebuild",
+			"targets": [
+				"all"
+			],
+			"preset": "__defaultBuildPreset__",
+			"group": "build",
+			"problemMatcher": [],
+			"detail": "CMake template clean rebuild task"
 		}
 	]
 }
