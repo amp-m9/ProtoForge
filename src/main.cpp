@@ -40,7 +40,7 @@ void ProcessInput(GLFWwindow* Window)
 
 void ScrollCallback(GLFWwindow* Window, double InXOffSet, double InYOffSet)
 {
-    if(bMouseCaptured)
+    if (bMouseCaptured)
     {
         MainCam->HandleMouseScroll(InXOffSet, InYOffSet);
     }
@@ -48,7 +48,7 @@ void ScrollCallback(GLFWwindow* Window, double InXOffSet, double InYOffSet)
 
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && !bMouseCaptured) 
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && !bMouseCaptured)
     {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_CAPTURED);
         bMouseCaptured = true;
@@ -86,7 +86,6 @@ int main()
     Shader LitObjectShader("assets/shaders/01_Lighting/00_Colours/colours.vs", "assets/shaders/01_Lighting/00_Colours/colours.fs");
     Shader WhiteLightShader("assets/shaders/01_Lighting/00_Colours/colours.vs", "assets/shaders/01_Lighting/00_Colours/whiteLight.fs");
 
-
     VAOData LightVAOData;
     LightVAOData.Stride = 8 * sizeof(float);
 
@@ -97,18 +96,17 @@ int main()
     posAttr.Offset = 0;
 
     normalAttribute = posAttr;
-    normalAttribute.Position = 1; 
+    normalAttribute.Position = 1;
     normalAttribute.Offset = posAttr.GetSize();
 
     textureAttribute = posAttr;
-    textureAttribute.Position = 2;  
+    textureAttribute.Position = 2;
     textureAttribute.Offset = posAttr.GetSize() + normalAttribute.GetSize();
 
     LightVAOData.Attributes.emplace_back(posAttr);
     LightVAOData.Attributes.emplace_back(normalAttribute);
     LightVAOData.Attributes.emplace_back(textureAttribute);
 
-   
     DefaultModel LightModel = DefaultModel(DefaultModels::TexturedCube, sizeof(DefaultModels::TexturedCube), LightVAOData, &WhiteLightShader);
     LightModel.SetPosition(1.f, 1.f, -2.0f);
     LightModel.SetScale(.2f, .2f, .2f);
@@ -116,31 +114,22 @@ int main()
     DirectionalLight* DirLight = new DirectionalLight();
     DirLight->Direction = glm::vec3(-0.2f, -1.0f, -0.3f);
 
-    glm::vec3 pointLightPositions[] = {
-    	glm::vec3( 0.7f,  0.2f,  2.0f),
-	    glm::vec3( 2.3f, -3.3f, -4.0f),
-	    glm::vec3(-4.0f,  2.0f, -12.0f),
-	    glm::vec3( 0.0f,  0.0f, -3.0f)
-    };  
+    glm::vec3 pointLightPositions[] = {glm::vec3(0.7f, 0.2f, 2.0f), glm::vec3(2.3f, -3.3f, -4.0f), glm::vec3(-4.0f, 2.0f, -12.0f),
+                                       glm::vec3(0.0f, 0.0f, -3.0f)};
 
-    glm::vec3 pointLightColours[] = {
-    	glm::vec3( 0.f,  0.f,  1.0f),
-	    glm::vec3( 0.0f, 1.0f, 0.0f),
-	    glm::vec3(1.0f,  .0f, .0f),
-	    glm::vec3( 1.0f)
-    };  
+    glm::vec3 pointLightColours[] = {glm::vec3(0.f, 0.f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, .0f, .0f), glm::vec3(1.0f)};
 
     std::vector<PointLight*> PointLights;
     PointLights.resize(4);
 
-    for(int i = 0; i<4; i ++)
+    for (int i = 0; i < 4; i++)
     {
         PointLights[i] = new PointLight();
         PointLights[i]->Position = pointLightPositions[i];
         PointLights[i]->Ambient = pointLightColours[i];
         PointLights[i]->Diffuse = pointLightColours[i];
     }
-    
+
     MainCam = new Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV,
                          (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f);
 
@@ -148,6 +137,7 @@ int main()
     float LastTime = glfwGetTime();
 
     glEnable(GL_DEPTH_TEST);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Use GL_FILL to restore solid drawing
 
     GLbitfield ClearMask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
 
@@ -156,26 +146,16 @@ int main()
     glfwSetScrollCallback(Window, ScrollCallback);
     glfwSetMouseButtonCallback(Window, MouseButtonCallback);
     glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-    
-    const glm::vec3 cubePositions[] = 
-    {
-        glm::vec3( 0.0f,  0.0f,  0.0f),
-        glm::vec3( 2.0f,  5.0f, -15.0f),
-        glm::vec3(-1.5f, -2.2f, -2.5f),
-        glm::vec3(-3.8f, -2.0f, -12.3f),
-        glm::vec3( 2.4f, -0.4f, -3.5f),
-        glm::vec3(-1.7f,  3.0f, -7.5f),
-        glm::vec3( 1.3f, -2.0f, -2.5f),
-        glm::vec3( 1.5f,  2.0f, -2.5f),
-        glm::vec3( 1.5f,  0.2f, -1.5f),
-        glm::vec3(-1.3f,  1.0f, -1.5f)
-    };
 
+    const glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),     glm::vec3(2.0f, 5.0f, -15.0f), glm::vec3(-1.5f, -2.2f, -2.5f),
+                                       glm::vec3(-3.8f, -2.0f, -12.3f), glm::vec3(2.4f, -0.4f, -3.5f), glm::vec3(-1.7f, 3.0f, -7.5f),
+                                       glm::vec3(1.3f, -2.0f, -2.5f),   glm::vec3(1.5f, 2.0f, -2.5f),  glm::vec3(1.5f, 0.2f, -1.5f),
+                                       glm::vec3(-1.3f, 1.0f, -1.5f)};
 
-    stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(false);
     Shader ModelShader("assets/shaders/03_Models/model_loading");
-    Model BackPackModel(FileSystem::getPath("assets/models/backpack/backpack.obj").c_str());
-    
+    Model BackPackModel(FileSystem::getPath("assets/models/backpack/backpack.obj").c_str(), true);
+
     while (!glfwWindowShouldClose(Window))
     {
         DeltaTime = glfwGetTime() - LastTime;
@@ -189,10 +169,10 @@ int main()
             MainCam->ProcessInput(Window, DeltaTime);
         }
 
-        for(unsigned int i = 0; i<4; ++i)
+        for (unsigned int i = 0; i < 4; ++i)
         {
             LightModel.SetPosition(pointLightPositions[i]);
-            LightModel.SetShaderUniform<glm::vec3>("lightColor",pointLightColours[i]);
+            LightModel.SetShaderUniform<glm::vec3>("lightColor", pointLightColours[i]);
             LightModel.Draw(MainCam, nullptr, {});
         }
 
@@ -201,44 +181,13 @@ int main()
         glfwPollEvents();
     }
 
-
     glfwTerminate();
     return 0;
 }
 
-bool LoadTexture(const char* fileLocation, unsigned int& TextureID, const bool bUseAlpha, const bool bFlipVerticallyOnLoad)
-{
-    std::string path = FileSystem::getPath(fileLocation).c_str();
-    stbi_set_flip_vertically_on_load(bFlipVerticallyOnLoad);
-
-    int width, height, nrChannels;
-    unsigned char* TextureData = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
-
-    if (!TextureData)
-    {
-        return false;
-    }
-
-    glGenTextures(1, &TextureID);
-    glBindTexture(GL_TEXTURE_2D, TextureID);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // actually loads the texture data
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, bUseAlpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, TextureData);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    stbi_image_free(TextureData);
-    return true;
-}
-
 void MouseCallback(GLFWwindow* Window, double InXPos, double InYPos)
 {
-    if(bMouseCaptured)
+    if (bMouseCaptured)
     {
         MainCam->HandleMouseMove(InXPos, InYPos, DeltaTime);
     }

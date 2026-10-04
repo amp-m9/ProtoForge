@@ -5,6 +5,7 @@
 #include <assimp/mesh.h>
 #include <string>
 #include <vector>
+#include <map>
 
 #define MAX_BONE_INFLUENCE 4
 #define TEXTURE_DIFFUSE "texture_diffuse"
@@ -20,10 +21,10 @@ struct Vertex
     glm::vec3 mTangent;
     glm::vec3 mBitangent;
 
-	//bone indexes which will influence this vertex
-	int m_BoneIDs[MAX_BONE_INFLUENCE];
-	//weights from each bone
-	float m_Weights[MAX_BONE_INFLUENCE];
+    // bone indexes which will influence this vertex
+    int m_BoneIDs[MAX_BONE_INFLUENCE];
+    // weights from each bone
+    float m_Weights[MAX_BONE_INFLUENCE];
 
     void SetPosition(aiVector3D* InVector)
     {
@@ -48,24 +49,41 @@ struct Texture
 {
     unsigned int mID;
     std::string mType;
+};
+
+struct TextureInfo
+{
+    unsigned int mIndex;
+    unsigned int mId;
     std::string mPath;
+    std::string mType;
+    class aiTexture* embeddedTexture;
+    bool bFlipTextureOnLoad = false;
+};
+
+struct MeshCreationInfo
+{
+    std::vector<Vertex> mVertices;
+    std::vector<unsigned int> mIndices;
+    std::map<std::string, std::vector<unsigned int>> mTextureIndices;
 };
 
 class Mesh
 {
 
-    public: 
-        std::vector<Vertex> mVertices;
-        std::vector<unsigned int> mIndices;
-        std::vector<Texture> mTextures;
-        unsigned int mVAO;
-    public:
-        Mesh(std::vector<Vertex> InVertices, std::vector<unsigned int>InIndices, std::vector<Texture> InTextures);
-        void Draw(Shader &shader);
-    
-    private:
-        //  render data
-        unsigned int mVBO, mEBO;
+  public:
+    std::vector<Vertex> mVertices;
+    std::vector<unsigned int> mIndices;
+    std::vector<Texture> mTextures;
+    unsigned int mVAO;
 
-        void SetupMesh();
+  public:
+    Mesh(std::vector<Vertex> InVertices, std::vector<unsigned int> InIndices, std::vector<Texture> InTextures);
+    void Draw(Shader& shader);
+
+  private:
+    //  render data
+    unsigned int mVBO, mEBO;
+
+    void SetupMesh();
 };
