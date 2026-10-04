@@ -69,5 +69,7 @@
     "search.exclude": {
         "${workspaceFolder}/build/*": true
     },
-    "C_Cpp.errorSquiggles": "enabledIfIncludesResolve"
+    "C_Cpp.errorSquiggles": "enabledIfIncludesResolve",
+    "editor.detectIndentation": true,
+    "editor.indentSize": "4"
 }

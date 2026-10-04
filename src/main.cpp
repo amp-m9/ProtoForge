@@ -1,21 +1,24 @@
 #include <algorithm>
 #include <assert.h>
-#include "filesystem.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 #include <iostream>
 #include <stb_image.h>
+
+#include "Camera.h"
+#include "filesystem.h"
+#include "Helpers.h"
+#include "main.h"
+#include "Model.h"
 #include "Shader.h"
 #include "Utils.h"
-#include "main.h"
-#include "DefaultModel.h"
-#include "Model.h"
-#include "Camera.h"
-#include "Helpers.h"
+
 Camera* MainCam;
 bool bMouseCaptured = true;
 
@@ -30,12 +33,6 @@ void ProcessInput(GLFWwindow* Window)
     {
         glfwSetWindowShouldClose(Window, true);
     }
-
-    // if((glfwGetKey(Window, GLFW_KEY_F1) & glfwGetKey(Window, GLFW_KEY_F1)  == GLFW_PRESS) && bMouseCaptured)
-    // {
-    //     glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    //     bMouseCaptured = false;
-    // }
 }
 
 void ScrollCallback(GLFWwindow* Window, double InXOffSet, double InYOffSet)
@@ -61,7 +58,6 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     GLFWwindow* Window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
     if (Window == NULL)
@@ -83,52 +79,19 @@ int main()
 
     glfwSetFramebufferSizeCallback(Window, FramebufferSizeCallback);
 
-    Shader LitObjectShader("assets/shaders/01_Lighting/00_Colours/colours.vs", "assets/shaders/01_Lighting/00_Colours/colours.fs");
-    Shader WhiteLightShader("assets/shaders/01_Lighting/00_Colours/colours.vs", "assets/shaders/01_Lighting/00_Colours/whiteLight.fs");
+    IMGUI_CHECKVERSION();
 
-    VAOData LightVAOData;
-    LightVAOData.Stride = 8 * sizeof(float);
+    ImGui::CreateContext();
 
-    VertexAttribute<float> posAttr, normalAttribute, textureAttribute;
-    posAttr.CountAtPosition = 3;
-    posAttr.NormalizedAtPosition = false;
-    posAttr.Position = 0;
-    posAttr.Offset = 0;
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
 
-    normalAttribute = posAttr;
-    normalAttribute.Position = 1;
-    normalAttribute.Offset = posAttr.GetSize();
+    ImGui::StyleColorsDark();
 
-    textureAttribute = posAttr;
-    textureAttribute.Position = 2;
-    textureAttribute.Offset = posAttr.GetSize() + normalAttribute.GetSize();
+    ImGui_ImplGlfw_InitForOpenGL(Window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
 
-    LightVAOData.Attributes.emplace_back(posAttr);
-    LightVAOData.Attributes.emplace_back(normalAttribute);
-    LightVAOData.Attributes.emplace_back(textureAttribute);
 
-    DefaultModel LightModel = DefaultModel(DefaultModels::TexturedCube, sizeof(DefaultModels::TexturedCube), LightVAOData, &WhiteLightShader);
-    LightModel.SetPosition(1.f, 1.f, -2.0f);
-    LightModel.SetScale(.2f, .2f, .2f);
-
-    DirectionalLight* DirLight = new DirectionalLight();
-    DirLight->Direction = glm::vec3(-0.2f, -1.0f, -0.3f);
-
-    glm::vec3 pointLightPositions[] = {glm::vec3(0.7f, 0.2f, 2.0f), glm::vec3(2.3f, -3.3f, -4.0f), glm::vec3(-4.0f, 2.0f, -12.0f),
-                                       glm::vec3(0.0f, 0.0f, -3.0f)};
-
-    glm::vec3 pointLightColours[] = {glm::vec3(0.f, 0.f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, .0f, .0f), glm::vec3(1.0f)};
-
-    std::vector<PointLight*> PointLights;
-    PointLights.resize(4);
-
-    for (int i = 0; i < 4; i++)
-    {
-        PointLights[i] = new PointLight();
-        PointLights[i]->Position = pointLightPositions[i];
-        PointLights[i]->Ambient = pointLightColours[i];
-        PointLights[i]->Diffuse = pointLightColours[i];
-    }
 
     MainCam = new Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV,
                          (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f);
@@ -145,17 +108,14 @@ int main()
     glfwSetCursorPosCallback(Window, MouseCallback);
     glfwSetScrollCallback(Window, ScrollCallback);
     glfwSetMouseButtonCallback(Window, MouseButtonCallback);
-    glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-
-    const glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),     glm::vec3(2.0f, 5.0f, -15.0f), glm::vec3(-1.5f, -2.2f, -2.5f),
-                                       glm::vec3(-3.8f, -2.0f, -12.3f), glm::vec3(2.4f, -0.4f, -3.5f), glm::vec3(-1.7f, 3.0f, -7.5f),
-                                       glm::vec3(1.3f, -2.0f, -2.5f),   glm::vec3(1.5f, 2.0f, -2.5f),  glm::vec3(1.5f, 0.2f, -1.5f),
-                                       glm::vec3(-1.3f, 1.0f, -1.5f)};
 
     stbi_set_flip_vertically_on_load(false);
     Shader ModelShader("assets/shaders/03_Models/model_loading");
-    Model BackPackModel(FileSystem::getPath("assets/models/backpack/backpack.obj").c_str(), true);
-
+    
+    // Model Cube = Model::Utils::Cube();
+    std::vector<Model> Models = {
+        Model(FileSystem::getPath("assets/models/barbarian.glb").c_str())
+    };
     while (!glfwWindowShouldClose(Window))
     {
         DeltaTime = glfwGetTime() - LastTime;
@@ -169,20 +129,50 @@ int main()
             MainCam->ProcessInput(Window, DeltaTime);
         }
 
-        for (unsigned int i = 0; i < 4; ++i)
-        {
-            LightModel.SetPosition(pointLightPositions[i]);
-            LightModel.SetShaderUniform<glm::vec3>("lightColor", pointLightColours[i]);
-            LightModel.Draw(MainCam, nullptr, {});
-        }
+        RenderModels(Models, ModelShader);
 
-        BackPackModel.Draw(*MainCam, ModelShader);
+        UpdateUI();
+
         glfwSwapBuffers(Window);
         glfwPollEvents();
     }
 
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+    
     glfwTerminate();
     return 0;
+}
+
+void RenderModels(std::vector<Model>& Models, Shader& ModelShader)
+{
+    for(auto& InModel: Models)
+    {
+        InModel.Draw(*MainCam, ModelShader);
+    }
+}
+
+void UpdateUI()
+{
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::Begin("LearnOpenGL");
+
+    ImGui::Text("Hello from Dear ImGui!");
+
+    if (ImGui::Button("Click me"))
+    {
+        // Do something
+    }
+
+    ImGui::End();
+
+    ImGui::Render();
+
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 void MouseCallback(GLFWwindow* Window, double InXPos, double InYPos)

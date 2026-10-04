@@ -105,13 +105,14 @@ MeshCreationInfo Model::GatherMeshInfo(std::vector<TextureInfo>& OutTextureInfoA
             return (aiTextureType_NORMALS);
         if (TextureTypeName == TEXTURE_SPECULAR)
             return (aiTextureType_SPECULAR);
+        return aiTextureType_UNKNOWN;
     };
 
     std::map<std::string, std::vector<unsigned int>> TextureIndices;
     if (InMesh->mMaterialIndex >= 0)
     {
         aiMaterial* material = InScene->mMaterials[InMesh->mMaterialIndex];
-        for (auto& Type : {TEXTURE_DIFFUSE, TEXTURE_HEIGHT, TEXTURE_NORMAL, TEXTURE_NORMAL})
+        for (auto& Type : {TEXTURE_DIFFUSE, TEXTURE_SPECULAR, TEXTURE_NORMAL, TEXTURE_HEIGHT})
         {
             TextureIndices[Type] = GatherMaterialTextures(OutTextureInfoArray, material, GetAiType(Type), Type, InScene, bFlipTexturesVertically);
         }
@@ -154,7 +155,7 @@ std::vector<unsigned int> Model::GatherMaterialTextures(std::vector<TextureInfo>
             texture.mIndex = EmbeddedTextureInfo.second;
             texture.mType = TextureTypeName;
             texture.mPath = TexturePath.C_Str();
-            texture.embeddedTexture = const_cast<aiTexture*>(EmbeddedTextureInfo.first);
+            texture.embeddedTexture = EmbeddedTextureInfo.first;
             texture.bFlipTextureOnLoad = bFlipTexturesVertically;
             OutTextureInfoArray.push_back(texture);
             Textures.push_back(OutTextureInfoArray.size() - 1);
@@ -168,26 +169,22 @@ void Model::LoadMeshTextures(std::vector<TextureInfo>& TextureInfoArray)
     // Will soon change to work with texture arrays :)))
     for (TextureInfo& Info : TextureInfoArray)
     {
-        if (Info.embeddedTexture)
-        {
-            // Do embedded load to memory;
-            continue;
-        }
-
-        Info.mId = (TextureFromFile(Info.mPath, this->mDirectory, Info.bFlipTextureOnLoad));
+        Info.mId = Info.embeddedTexture
+        ? TextureFromEmbedded(*Info.embeddedTexture, Info.bFlipTextureOnLoad)
+        : TextureFromFile(Info.mPath, this->mDirectory, Info.bFlipTextureOnLoad);
     }
 }
 
 void Model::AddMeshesToModel(const std::vector<MeshCreationInfo>& MeshInfoArray, std::vector<TextureInfo>& TextureInfoArray)
 {
-    for (const auto& Info : MeshInfoArray)
+    for (const auto& MeshInfo : MeshInfoArray)
     {
         std::vector<Texture> Textures;
-        for (std::string Type : {TEXTURE_DIFFUSE, TEXTURE_HEIGHT, TEXTURE_NORMAL, TEXTURE_NORMAL})
+        for (std::string Type : {TEXTURE_DIFFUSE, TEXTURE_SPECULAR, TEXTURE_NORMAL, TEXTURE_HEIGHT})
         {
-            if (Info.mTextureIndices.contains(Type))
+            if (MeshInfo.mTextureIndices.contains(Type))
             {
-                for (const unsigned int i : Info.mTextureIndices.at(Type))
+                for (const unsigned int i : MeshInfo.mTextureIndices.at(Type))
                 {
                     Texture tex;
                     TextureInfo TexInfo = TextureInfoArray[i];
@@ -198,6 +195,92 @@ void Model::AddMeshesToModel(const std::vector<MeshCreationInfo>& MeshInfoArray,
             }
         }
 
-        mMeshes.push_back(Mesh(Info.mVertices, Info.mIndices, Textures));
+        mMeshes.push_back(Mesh(MeshInfo.mVertices, MeshInfo.mIndices, Textures));
     }
+}
+
+void Model::SetPosition(const glm::vec3 Position) 
+{
+    // mModelTransform.
+}
+
+void Model::SetScale(const glm::vec3 Position) {}
+
+Model Model::Utils::Cube()
+{
+    const std::vector<Vertex> TexturedCubeVertices = 
+    {
+        // positions          // normals           // texture coords
+        Vertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3(  0.0f,  0.0f, -1.0f) , glm::vec2( 0.0f, 0.0f)),
+        Vertex(glm::vec3(0.5f, -0.5f, -0.5f)  , glm::vec3( 0.0f,  0.0f, -1.0f)  , glm::vec2(1.0f, 0.0f)),
+        Vertex(glm::vec3(0.5f,  0.5f, -0.5f)  , glm::vec3( 0.0f,  0.0f, -1.0f)  , glm::vec2(1.0f, 1.0f)),
+        Vertex(glm::vec3(0.5f,  0.5f, -0.5f)  , glm::vec3( 0.0f,  0.0f, -1.0f)  , glm::vec2(1.0f, 1.0f)),
+        Vertex(glm::vec3(-0.5f,  0.5f, -0.5f) , glm::vec3(  0.0f,  0.0f, -1.0f) , glm::vec2( 0.0f, 1.0f)),
+        Vertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3(  0.0f,  0.0f, -1.0f) , glm::vec2( 0.0f, 0.0f)),
+        Vertex(glm::vec3(-0.5f, -0.5f,  0.5f) , glm::vec3(  0.0f,  0.0f, 1.0f)  , glm::vec2( 0.0f, 0.0f)),
+        Vertex(glm::vec3(0.5f, -0.5f,  0.5f)  , glm::vec3( 0.0f,  0.0f, 1.0f)   , glm::vec2(1.0f, 0.0f)),
+        Vertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 0.0f,  0.0f, 1.0f)   , glm::vec2(1.0f, 1.0f)),
+        Vertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 0.0f,  0.0f, 1.0f)   , glm::vec2(1.0f, 1.0f)),
+        Vertex(glm::vec3(-0.5f,  0.5f,  0.5f) , glm::vec3(  0.0f,  0.0f, 1.0f)  , glm::vec2( 0.0f, 1.0f)),
+        Vertex(glm::vec3(-0.5f, -0.5f,  0.5f) , glm::vec3(  0.0f,  0.0f, 1.0f)  , glm::vec2( 0.0f, 0.0f)),
+        Vertex(glm::vec3(-0.5f,  0.5f,  0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 1.0f, 0.0f)),
+        Vertex(glm::vec3(-0.5f,  0.5f, -0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 1.0f, 1.0f)),
+        Vertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
+        Vertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
+        Vertex(glm::vec3(-0.5f, -0.5f,  0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 0.0f, 0.0f)),
+        Vertex(glm::vec3(-0.5f,  0.5f,  0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 1.0f, 0.0f)),
+        Vertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
+        Vertex(glm::vec3(0.5f,  0.5f, -0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(1.0f, 1.0f)),
+        Vertex(glm::vec3(0.5f, -0.5f, -0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(0.0f, 1.0f)),
+        Vertex(glm::vec3(0.5f, -0.5f, -0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(0.0f, 1.0f)),
+        Vertex(glm::vec3(0.5f, -0.5f,  0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(0.0f, 0.0f)),
+        Vertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
+        Vertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3(  0.0f, -1.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
+        Vertex(glm::vec3(0.5f, -0.5f, -0.5f)  , glm::vec3( 0.0f, -1.0f,  0.0f)  , glm::vec2(1.0f, 1.0f)),
+        Vertex(glm::vec3(0.5f, -0.5f,  0.5f)  , glm::vec3( 0.0f, -1.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
+        Vertex(glm::vec3(0.5f, -0.5f,  0.5f)  , glm::vec3( 0.0f, -1.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
+        Vertex(glm::vec3(-0.5f, -0.5f,  0.5f) , glm::vec3(  0.0f, -1.0f,  0.0f) , glm::vec2( 0.0f, 0.0f)),
+        Vertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3(  0.0f, -1.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
+        Vertex(glm::vec3(-0.5f,  0.5f, -0.5f) , glm::vec3(  0.0f,  1.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
+        Vertex(glm::vec3(0.5f,  0.5f, -0.5f)  , glm::vec3( 0.0f,  1.0f,  0.0f)  , glm::vec2(1.0f, 1.0f)),
+        Vertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 0.0f,  1.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
+        Vertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 0.0f,  1.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
+        Vertex(glm::vec3(-0.5f,  0.5f,  0.5f) , glm::vec3(  0.0f,  1.0f,  0.0f) , glm::vec2( 0.0f, 0.0f)),
+        Vertex(glm::vec3(-0.5f,  0.5f, -0.5f) , glm::vec3(  0.0f,  1.0f,  0.0f) , glm::vec2( 0.0f, 1.0f))
+    };
+
+    std::vector<unsigned int> cubeIndices = {
+        0, 1, 2,
+        3, 4, 5,
+        6, 7, 8,
+        9, 10, 11,
+        12, 13, 14,
+        15, 16, 17,
+        18, 19, 20,
+        21, 22, 23,
+        24, 25, 26,
+        27, 28, 29,
+        30, 31, 32,
+        33, 34, 35
+    };
+
+    MeshCreationInfo MeshInfo;
+    MeshInfo.mIndices = cubeIndices;
+    MeshInfo.mVertices = TexturedCubeVertices;
+    MeshInfo.mTextureIndices[TEXTURE_DIFFUSE] = {0,1};
+
+    TextureInfo TexInfo1;
+    TexInfo1.mId = TextureFromData(CreateSolidTexture(255,0,0,255), GL_RGBA8, GL_RGBA, 100,100);
+    TexInfo1.mType = TEXTURE_DIFFUSE;
+
+    TextureInfo TexInfo2;
+    TexInfo2.mId = TextureFromData(CreateSolidTexture(255,255,0,255), GL_RGBA8, GL_RGBA, 100,100);
+    TexInfo2.mType = TEXTURE_DIFFUSE;
+
+    std::vector<MeshCreationInfo> MeshInfoArray = {MeshInfo}; 
+    std::vector<TextureInfo> TextureInfoArray = {TexInfo1, TexInfo2};
+
+    Model DefaultCubeModel;
+    DefaultCubeModel.AddMeshesToModel(MeshInfoArray, TextureInfoArray);
+    return DefaultCubeModel;
 }

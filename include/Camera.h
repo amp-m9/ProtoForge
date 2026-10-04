@@ -108,8 +108,8 @@ class Camera
   private:
     float Sensitivity = 1.f;
     float Yaw = 0.0f;
-    ;
     float Pitch = 0.0f;
+    
     float LastX = 0.0f;
     float LastY = 0.0f;
 

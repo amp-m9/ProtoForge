@@ -15,11 +15,25 @@
 
 struct Vertex
 {
-    glm::vec3 mPosition;
-    glm::vec3 mNormal;
-    glm::vec2 mTexCoords;
-    glm::vec3 mTangent;
-    glm::vec3 mBitangent;
+    glm::vec3 mPosition{0.0f};
+    glm::vec3 mNormal{0.0f};
+    glm::vec2 mTexCoords{0.0f};
+    glm::vec3 mTangent{0.0f};
+    glm::vec3 mBitangent{0.0f};
+
+    Vertex(
+        const glm::vec3& Position = glm::vec3(0.0f),
+        const glm::vec3& Normal = glm::vec3(0.0f),
+        const glm::vec2& TexCoords = glm::vec2(0.0f),
+        const glm::vec3& Tangent = glm::vec3(0.0f),
+        const glm::vec3& Bitangent = glm::vec3(0.0f))
+        : mPosition(Position),
+          mNormal(Normal),
+          mTexCoords(TexCoords),
+          mTangent(Tangent),
+          mBitangent(Bitangent)
+    {
+    }
 
     // bone indexes which will influence this vertex
     int m_BoneIDs[MAX_BONE_INFLUENCE];
@@ -53,11 +67,11 @@ struct Texture
 
 struct TextureInfo
 {
-    unsigned int mIndex;
-    unsigned int mId;
+    unsigned int mIndex = 0;
+    unsigned int mId = 0;
     std::string mPath;
     std::string mType;
-    class aiTexture* embeddedTexture;
+    const class aiTexture* embeddedTexture = nullptr;
     bool bFlipTextureOnLoad = false;
 };
 

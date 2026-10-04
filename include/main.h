@@ -1,9 +1,12 @@
 #pragma once
 
-float DeltaTime = 0.0f; // time between current frame and last frame\
+// time between current frame and last frame
+float DeltaTime = 0.0f;
 
 bool LoadTexture(const char* fileLocation, unsigned int& TextureID, const bool bUseAlpha = false, const bool bFlipVerticallyOnLoad = false);
 void MouseCallback(GLFWwindow* Window, double xpos, double ypos);
+void UpdateUI();
+void RenderModels(std::vector<Model>& Models, Shader& ModelShader);
 void FramebufferSizeCallback(GLFWwindow* Window, int width, int height);
 void ProcessInput(GLFWwindow* Window);
 void ScrollCallback(GLFWwindow* Window, double InXOffSet, double InYOffSet);

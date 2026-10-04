@@ -15,12 +15,39 @@ class Shader;
 
 class Model
 {
-  public:
+public:
     Model(const char* path, bool bFlipTexturesVertically = false) { LoadModel(path, bFlipTexturesVertically); }
+    Model() {}
 
     void Draw(Camera& Camera, Shader& shader);
+    void LoadMeshTextures(std::vector<TextureInfo>& TextureInfoArray);
+    void AddMeshesToModel(const std::vector<MeshCreationInfo>& MeshInfoArray, std::vector<TextureInfo>& TextureInfoArray);
+    void SetPosition(const glm::vec3 Position);
+    void SetScale(const glm::vec3 Position);
+    
+    struct Utils
+    {
+        Utils() = delete;
+        static Model Cube();
+        static unsigned char* CreateSolidTexture(unsigned char r,unsigned char g,unsigned char b,unsigned char a)
+        {
+            constexpr int size = 100 * 100 * 4;
 
-  private:
+            auto* data = new unsigned char[size];
+
+            for (int i = 0; i < 100 * 100; ++i)
+            {
+                data[i * 4 + 0] = r;
+                data[i * 4 + 1] = g;
+                data[i * 4 + 2] = b;
+                data[i * 4 + 3] = a;
+            }
+
+            return data;
+        }
+    };
+
+private:
     std::vector<Mesh> mMeshes;
     std::vector<TextureInfo> mTextures;
 
@@ -33,6 +60,4 @@ class Model
                                     const bool bFlipTexturesVertically);
     std::vector<unsigned int> GatherMaterialTextures(std::vector<TextureInfo>& InTextureInfoArray, aiMaterial* InMaterial, aiTextureType textureType,
                                                      std::string textureTypeName, const aiScene* InScene, const bool bFlipTexturesVertically);
-    void LoadMeshTextures(std::vector<TextureInfo>& TextureInfoArray);
-    void AddMeshesToModel(const std::vector<MeshCreationInfo>& MeshInfoArray, std::vector<TextureInfo>& TextureInfoArray);
 };
