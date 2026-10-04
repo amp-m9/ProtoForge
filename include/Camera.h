@@ -6,10 +6,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-class Camera
+class PFCamera
 {
   public:
-    Camera(glm::vec3 Position, glm::vec3 CamUp, glm::vec3 CamForward, float FOV, float AspectRatio, float NearPlane, float FarPlane)
+    PFCamera(glm::vec3 Position, glm::vec3 CamUp, glm::vec3 CamForward, float FOV, float AspectRatio, float NearPlane, float FarPlane)
         : Position(Position), CamUp(CamUp), CamForward(CamForward), FOV(FOV), AspectRatio(AspectRatio), NearPlane(NearPlane), FarPlane(FarPlane) {};
 
     const glm::mat4& GetViewMatrix() const { return ViewMatrix; }

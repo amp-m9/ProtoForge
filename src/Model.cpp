@@ -11,20 +11,20 @@
 #include "Camera.h"
 #include "Shader.h"
 
-void Model::Draw(Camera& Camera, Shader& Shader)
+void PFModel::Draw(PFCamera& Camera, PFShader& Shader)
 {
     Shader.Use();
     Shader.SetMat4("projection", Camera.GetProjectionMatrix());
     Shader.SetMat4("view", Camera.GetViewMatrix());
     Shader.SetMat4("model", mModelTransform);
 
-    for (Mesh& mesh : mMeshes)
+    for (PFMesh& mesh : mMeshes)
     {
         mesh.Draw(Shader);
     }
 }
 
-void Model::LoadModel(const std::string path, const bool bFlipTexturesVertically)
+void PFModel::LoadModel(const std::string path, const bool bFlipTexturesVertically)
 {
     Assimp::Importer Importer;
     const aiScene* Scene = Importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_PreTransformVertices);
@@ -36,15 +36,15 @@ void Model::LoadModel(const std::string path, const bool bFlipTexturesVertically
 
     mDirectory = path.substr(0, path.find_last_of('/'));
 
-    std::vector<MeshCreationInfo> MeshCreationInfoArray;
-    std::vector<TextureInfo> TextureInfoArray;
+    std::vector<PFMeshCreationInfo> MeshCreationInfoArray;
+    std::vector<PFTextureCreationInfo> TextureInfoArray;
     ProcessNode(Scene->mRootNode, Scene, MeshCreationInfoArray, TextureInfoArray, bFlipTexturesVertically);
     LoadMeshTextures(TextureInfoArray);
     AddMeshesToModel(MeshCreationInfoArray, TextureInfoArray);
 }
 
-void Model::ProcessNode(aiNode* InNode, const aiScene* InScene, std::vector<MeshCreationInfo>& InMeshCreationInfoArray,
-                        std::vector<TextureInfo>& InTextureInfoArray, bool bFlipTexturesVertically)
+void PFModel::ProcessNode(aiNode* InNode, const aiScene* InScene, std::vector<PFMeshCreationInfo>& InMeshCreationInfoArray,
+                        std::vector<PFTextureCreationInfo>& InTextureInfoArray, bool bFlipTexturesVertically)
 {
     // process all the node's meshes (if any)
     for (unsigned int i = 0; i < InNode->mNumMeshes; i++)
@@ -60,16 +60,16 @@ void Model::ProcessNode(aiNode* InNode, const aiScene* InScene, std::vector<Mesh
     }
 }
 
-MeshCreationInfo Model::GatherMeshInfo(std::vector<TextureInfo>& OutTextureInfoArray, aiMesh* InMesh, const aiScene* InScene,
+PFMeshCreationInfo PFModel::GatherMeshInfo(std::vector<PFTextureCreationInfo>& OutTextureInfoArray, aiMesh* InMesh, const aiScene* InScene,
                                        const bool bFlipTexturesVertically)
 {
-    std::vector<Vertex> Vertices;
+    std::vector<PFVertex> Vertices;
     std::vector<unsigned int> Indices;
-    std::vector<Texture> Textures;
+    std::vector<PFTexture> Textures;
 
     for (unsigned int i = 0; i < InMesh->mNumVertices; i++)
     {
-        Vertex Vert;
+        PFVertex Vert;
 
         Vert.SetPosition(&InMesh->mVertices[i]);
         Vert.SetNormal(&InMesh->mNormals[i]);
@@ -118,7 +118,7 @@ MeshCreationInfo Model::GatherMeshInfo(std::vector<TextureInfo>& OutTextureInfoA
         }
     }
 
-    MeshCreationInfo Info;
+    PFMeshCreationInfo Info;
     Info.mVertices = Vertices;
     Info.mIndices = Indices;
     Info.mTextureIndices = TextureIndices;
@@ -126,7 +126,7 @@ MeshCreationInfo Model::GatherMeshInfo(std::vector<TextureInfo>& OutTextureInfoA
     return Info;
 }
 
-std::vector<unsigned int> Model::GatherMaterialTextures(std::vector<TextureInfo>& OutTextureInfoArray, aiMaterial* MaterialPtr,
+std::vector<unsigned int> PFModel::GatherMaterialTextures(std::vector<PFTextureCreationInfo>& OutTextureInfoArray, aiMaterial* MaterialPtr,
                                                         aiTextureType TextureType, std::string TextureTypeName, const aiScene* InScene,
                                                         const bool bFlipTexturesVertically)
 {
@@ -151,7 +151,7 @@ std::vector<unsigned int> Model::GatherMaterialTextures(std::vector<TextureInfo>
         if (!bSkip)
         {
             std::pair<const aiTexture*, int> EmbeddedTextureInfo = InScene->GetEmbeddedTextureAndIndex(TexturePath.C_Str());
-            TextureInfo texture;
+            PFTextureCreationInfo texture;
             texture.mIndex = EmbeddedTextureInfo.second;
             texture.mType = TextureTypeName;
             texture.mPath = TexturePath.C_Str();
@@ -164,10 +164,10 @@ std::vector<unsigned int> Model::GatherMaterialTextures(std::vector<TextureInfo>
     return Textures;
 }
 
-void Model::LoadMeshTextures(std::vector<TextureInfo>& TextureInfoArray)
+void PFModel::LoadMeshTextures(std::vector<PFTextureCreationInfo>& TextureInfoArray)
 {
     // Will soon change to work with texture arrays :)))
-    for (TextureInfo& Info : TextureInfoArray)
+    for (PFTextureCreationInfo& Info : TextureInfoArray)
     {
         Info.mId = Info.embeddedTexture
         ? TextureFromEmbedded(*Info.embeddedTexture, Info.bFlipTextureOnLoad)
@@ -175,19 +175,19 @@ void Model::LoadMeshTextures(std::vector<TextureInfo>& TextureInfoArray)
     }
 }
 
-void Model::AddMeshesToModel(const std::vector<MeshCreationInfo>& MeshInfoArray, std::vector<TextureInfo>& TextureInfoArray)
+void PFModel::AddMeshesToModel(const std::vector<PFMeshCreationInfo>& MeshInfoArray, std::vector<PFTextureCreationInfo>& TextureInfoArray)
 {
     for (const auto& MeshInfo : MeshInfoArray)
     {
-        std::vector<Texture> Textures;
+        std::vector<PFTexture> Textures;
         for (std::string Type : {TEXTURE_DIFFUSE, TEXTURE_SPECULAR, TEXTURE_NORMAL, TEXTURE_HEIGHT})
         {
             if (MeshInfo.mTextureIndices.contains(Type))
             {
                 for (const unsigned int i : MeshInfo.mTextureIndices.at(Type))
                 {
-                    Texture tex;
-                    TextureInfo TexInfo = TextureInfoArray[i];
+                    PFTexture tex;
+                    PFTextureCreationInfo TexInfo = TextureInfoArray[i];
                     tex.mID = TexInfo.mId;
                     tex.mType = Type;
                     Textures.push_back(tex);
@@ -195,58 +195,58 @@ void Model::AddMeshesToModel(const std::vector<MeshCreationInfo>& MeshInfoArray,
             }
         }
 
-        mMeshes.push_back(Mesh(MeshInfo.mVertices, MeshInfo.mIndices, Textures));
+        mMeshes.push_back(PFMesh(MeshInfo.mVertices, MeshInfo.mIndices, Textures));
     }
 }
 
-void Model::SetPosition(const glm::vec3 Position) 
+void PFModel::SetPosition(const glm::vec3 Position) 
 {
     // mModelTransform.
 }
 
-void Model::SetScale(const glm::vec3 Position) {}
+void PFModel::SetScale(const glm::vec3 Position) {}
 
-Model Model::Utils::Cube()
+PFModel PFModel::Utils::Cube()
 {
-    const std::vector<Vertex> TexturedCubeVertices = 
+    const std::vector<PFVertex> TexturedCubeVertices = 
     {
         // positions          // normals           // texture coords
-        Vertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3(  0.0f,  0.0f, -1.0f) , glm::vec2( 0.0f, 0.0f)),
-        Vertex(glm::vec3(0.5f, -0.5f, -0.5f)  , glm::vec3( 0.0f,  0.0f, -1.0f)  , glm::vec2(1.0f, 0.0f)),
-        Vertex(glm::vec3(0.5f,  0.5f, -0.5f)  , glm::vec3( 0.0f,  0.0f, -1.0f)  , glm::vec2(1.0f, 1.0f)),
-        Vertex(glm::vec3(0.5f,  0.5f, -0.5f)  , glm::vec3( 0.0f,  0.0f, -1.0f)  , glm::vec2(1.0f, 1.0f)),
-        Vertex(glm::vec3(-0.5f,  0.5f, -0.5f) , glm::vec3(  0.0f,  0.0f, -1.0f) , glm::vec2( 0.0f, 1.0f)),
-        Vertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3(  0.0f,  0.0f, -1.0f) , glm::vec2( 0.0f, 0.0f)),
-        Vertex(glm::vec3(-0.5f, -0.5f,  0.5f) , glm::vec3(  0.0f,  0.0f, 1.0f)  , glm::vec2( 0.0f, 0.0f)),
-        Vertex(glm::vec3(0.5f, -0.5f,  0.5f)  , glm::vec3( 0.0f,  0.0f, 1.0f)   , glm::vec2(1.0f, 0.0f)),
-        Vertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 0.0f,  0.0f, 1.0f)   , glm::vec2(1.0f, 1.0f)),
-        Vertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 0.0f,  0.0f, 1.0f)   , glm::vec2(1.0f, 1.0f)),
-        Vertex(glm::vec3(-0.5f,  0.5f,  0.5f) , glm::vec3(  0.0f,  0.0f, 1.0f)  , glm::vec2( 0.0f, 1.0f)),
-        Vertex(glm::vec3(-0.5f, -0.5f,  0.5f) , glm::vec3(  0.0f,  0.0f, 1.0f)  , glm::vec2( 0.0f, 0.0f)),
-        Vertex(glm::vec3(-0.5f,  0.5f,  0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 1.0f, 0.0f)),
-        Vertex(glm::vec3(-0.5f,  0.5f, -0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 1.0f, 1.0f)),
-        Vertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
-        Vertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
-        Vertex(glm::vec3(-0.5f, -0.5f,  0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 0.0f, 0.0f)),
-        Vertex(glm::vec3(-0.5f,  0.5f,  0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 1.0f, 0.0f)),
-        Vertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
-        Vertex(glm::vec3(0.5f,  0.5f, -0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(1.0f, 1.0f)),
-        Vertex(glm::vec3(0.5f, -0.5f, -0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(0.0f, 1.0f)),
-        Vertex(glm::vec3(0.5f, -0.5f, -0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(0.0f, 1.0f)),
-        Vertex(glm::vec3(0.5f, -0.5f,  0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(0.0f, 0.0f)),
-        Vertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
-        Vertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3(  0.0f, -1.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
-        Vertex(glm::vec3(0.5f, -0.5f, -0.5f)  , glm::vec3( 0.0f, -1.0f,  0.0f)  , glm::vec2(1.0f, 1.0f)),
-        Vertex(glm::vec3(0.5f, -0.5f,  0.5f)  , glm::vec3( 0.0f, -1.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
-        Vertex(glm::vec3(0.5f, -0.5f,  0.5f)  , glm::vec3( 0.0f, -1.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
-        Vertex(glm::vec3(-0.5f, -0.5f,  0.5f) , glm::vec3(  0.0f, -1.0f,  0.0f) , glm::vec2( 0.0f, 0.0f)),
-        Vertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3(  0.0f, -1.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
-        Vertex(glm::vec3(-0.5f,  0.5f, -0.5f) , glm::vec3(  0.0f,  1.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
-        Vertex(glm::vec3(0.5f,  0.5f, -0.5f)  , glm::vec3( 0.0f,  1.0f,  0.0f)  , glm::vec2(1.0f, 1.0f)),
-        Vertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 0.0f,  1.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
-        Vertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 0.0f,  1.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
-        Vertex(glm::vec3(-0.5f,  0.5f,  0.5f) , glm::vec3(  0.0f,  1.0f,  0.0f) , glm::vec2( 0.0f, 0.0f)),
-        Vertex(glm::vec3(-0.5f,  0.5f, -0.5f) , glm::vec3(  0.0f,  1.0f,  0.0f) , glm::vec2( 0.0f, 1.0f))
+        PFVertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3(  0.0f,  0.0f, -1.0f) , glm::vec2( 0.0f, 0.0f)),
+        PFVertex(glm::vec3(0.5f, -0.5f, -0.5f)  , glm::vec3( 0.0f,  0.0f, -1.0f)  , glm::vec2(1.0f, 0.0f)),
+        PFVertex(glm::vec3(0.5f,  0.5f, -0.5f)  , glm::vec3( 0.0f,  0.0f, -1.0f)  , glm::vec2(1.0f, 1.0f)),
+        PFVertex(glm::vec3(0.5f,  0.5f, -0.5f)  , glm::vec3( 0.0f,  0.0f, -1.0f)  , glm::vec2(1.0f, 1.0f)),
+        PFVertex(glm::vec3(-0.5f,  0.5f, -0.5f) , glm::vec3(  0.0f,  0.0f, -1.0f) , glm::vec2( 0.0f, 1.0f)),
+        PFVertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3(  0.0f,  0.0f, -1.0f) , glm::vec2( 0.0f, 0.0f)),
+        PFVertex(glm::vec3(-0.5f, -0.5f,  0.5f) , glm::vec3(  0.0f,  0.0f, 1.0f)  , glm::vec2( 0.0f, 0.0f)),
+        PFVertex(glm::vec3(0.5f, -0.5f,  0.5f)  , glm::vec3( 0.0f,  0.0f, 1.0f)   , glm::vec2(1.0f, 0.0f)),
+        PFVertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 0.0f,  0.0f, 1.0f)   , glm::vec2(1.0f, 1.0f)),
+        PFVertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 0.0f,  0.0f, 1.0f)   , glm::vec2(1.0f, 1.0f)),
+        PFVertex(glm::vec3(-0.5f,  0.5f,  0.5f) , glm::vec3(  0.0f,  0.0f, 1.0f)  , glm::vec2( 0.0f, 1.0f)),
+        PFVertex(glm::vec3(-0.5f, -0.5f,  0.5f) , glm::vec3(  0.0f,  0.0f, 1.0f)  , glm::vec2( 0.0f, 0.0f)),
+        PFVertex(glm::vec3(-0.5f,  0.5f,  0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 1.0f, 0.0f)),
+        PFVertex(glm::vec3(-0.5f,  0.5f, -0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 1.0f, 1.0f)),
+        PFVertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
+        PFVertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
+        PFVertex(glm::vec3(-0.5f, -0.5f,  0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 0.0f, 0.0f)),
+        PFVertex(glm::vec3(-0.5f,  0.5f,  0.5f) , glm::vec3( -1.0f,  0.0f,  0.0f) , glm::vec2( 1.0f, 0.0f)),
+        PFVertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
+        PFVertex(glm::vec3(0.5f,  0.5f, -0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(1.0f, 1.0f)),
+        PFVertex(glm::vec3(0.5f, -0.5f, -0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(0.0f, 1.0f)),
+        PFVertex(glm::vec3(0.5f, -0.5f, -0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(0.0f, 1.0f)),
+        PFVertex(glm::vec3(0.5f, -0.5f,  0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(0.0f, 0.0f)),
+        PFVertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 1.0f,  0.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
+        PFVertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3(  0.0f, -1.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
+        PFVertex(glm::vec3(0.5f, -0.5f, -0.5f)  , glm::vec3( 0.0f, -1.0f,  0.0f)  , glm::vec2(1.0f, 1.0f)),
+        PFVertex(glm::vec3(0.5f, -0.5f,  0.5f)  , glm::vec3( 0.0f, -1.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
+        PFVertex(glm::vec3(0.5f, -0.5f,  0.5f)  , glm::vec3( 0.0f, -1.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
+        PFVertex(glm::vec3(-0.5f, -0.5f,  0.5f) , glm::vec3(  0.0f, -1.0f,  0.0f) , glm::vec2( 0.0f, 0.0f)),
+        PFVertex(glm::vec3(-0.5f, -0.5f, -0.5f) , glm::vec3(  0.0f, -1.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
+        PFVertex(glm::vec3(-0.5f,  0.5f, -0.5f) , glm::vec3(  0.0f,  1.0f,  0.0f) , glm::vec2( 0.0f, 1.0f)),
+        PFVertex(glm::vec3(0.5f,  0.5f, -0.5f)  , glm::vec3( 0.0f,  1.0f,  0.0f)  , glm::vec2(1.0f, 1.0f)),
+        PFVertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 0.0f,  1.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
+        PFVertex(glm::vec3(0.5f,  0.5f,  0.5f)  , glm::vec3( 0.0f,  1.0f,  0.0f)  , glm::vec2(1.0f, 0.0f)),
+        PFVertex(glm::vec3(-0.5f,  0.5f,  0.5f) , glm::vec3(  0.0f,  1.0f,  0.0f) , glm::vec2( 0.0f, 0.0f)),
+        PFVertex(glm::vec3(-0.5f,  0.5f, -0.5f) , glm::vec3(  0.0f,  1.0f,  0.0f) , glm::vec2( 0.0f, 1.0f))
     };
 
     std::vector<unsigned int> cubeIndices = {
@@ -264,23 +264,23 @@ Model Model::Utils::Cube()
         33, 34, 35
     };
 
-    MeshCreationInfo MeshInfo;
+    PFMeshCreationInfo MeshInfo;
     MeshInfo.mIndices = cubeIndices;
     MeshInfo.mVertices = TexturedCubeVertices;
     MeshInfo.mTextureIndices[TEXTURE_DIFFUSE] = {0,1};
 
-    TextureInfo TexInfo1;
+    PFTextureCreationInfo TexInfo1;
     TexInfo1.mId = TextureFromData(CreateSolidTexture(255,0,0,255), GL_RGBA8, GL_RGBA, 100,100);
     TexInfo1.mType = TEXTURE_DIFFUSE;
 
-    TextureInfo TexInfo2;
+    PFTextureCreationInfo TexInfo2;
     TexInfo2.mId = TextureFromData(CreateSolidTexture(255,255,0,255), GL_RGBA8, GL_RGBA, 100,100);
     TexInfo2.mType = TEXTURE_DIFFUSE;
 
-    std::vector<MeshCreationInfo> MeshInfoArray = {MeshInfo}; 
-    std::vector<TextureInfo> TextureInfoArray = {TexInfo1, TexInfo2};
+    std::vector<PFMeshCreationInfo> MeshInfoArray = {MeshInfo}; 
+    std::vector<PFTextureCreationInfo> TextureInfoArray = {TexInfo1, TexInfo2};
 
-    Model DefaultCubeModel;
+    PFModel DefaultCubeModel;
     DefaultCubeModel.AddMeshesToModel(MeshInfoArray, TextureInfoArray);
     return DefaultCubeModel;
 }

@@ -116,7 +116,7 @@ unsigned int inline TextureFromFile(std::string fileName, std::string& directory
         return TextureID;
     }
 
-    std::cerr << "Texture failed to load at path: " << Path;
+    std::cerr << "PFTexture failed to load at path: " << Path;
     if (NrComponents == 0 && stbi_failure_reason())
         std::cerr << " (" << stbi_failure_reason() << ')';
     std::cerr << std::endl;

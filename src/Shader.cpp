@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <filesystem.h>
 
-Shader::Shader(const char* vertexPath, const char* fragmentPath)
+PFShader::PFShader(const char* vertexPath, const char* fragmentPath)
 {
     std::string VertexCode, FragmentCode;
     bool bSuccessfulLoad = true;
@@ -20,7 +20,7 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
     CreateAndSetShaderProgram(VertexCodeCharArray, FragmentCodeCharArray);
 }
 
-Shader::Shader(const char* shaderNameWithoutExtension)
+PFShader::PFShader(const char* shaderNameWithoutExtension)
 {
     std::string vertexPath = std::string(shaderNameWithoutExtension) + ".vs";
     std::string fragmentPath = std::string(shaderNameWithoutExtension) + ".fs";
@@ -38,7 +38,7 @@ Shader::Shader(const char* shaderNameWithoutExtension)
     CreateAndSetShaderProgram(VertexCodeCharArray, FragmentCodeCharArray);
 }
 
-bool Shader::LoadShaderFileAtPath(const char* Path, std::string& Code)
+bool PFShader::LoadShaderFileAtPath(const char* Path, std::string& Code)
 {
     std::ifstream ShaderFile;
 
@@ -64,7 +64,7 @@ bool Shader::LoadShaderFileAtPath(const char* Path, std::string& Code)
     }
 }
 
-void Shader::CreateAndSetShaderProgram(const char*& VertexCode, const char*& FragmentCode)
+void PFShader::CreateAndSetShaderProgram(const char*& VertexCode, const char*& FragmentCode)
 {
     unsigned int VertexShaderID, FragmentShaderID;
     int Success;

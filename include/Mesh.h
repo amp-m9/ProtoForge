@@ -13,7 +13,7 @@
 #define TEXTURE_NORMAL "texture_normal"
 #define TEXTURE_HEIGHT "texture_height"
 
-struct Vertex
+struct PFVertex
 {
     glm::vec3 mPosition{0.0f};
     glm::vec3 mNormal{0.0f};
@@ -21,7 +21,7 @@ struct Vertex
     glm::vec3 mTangent{0.0f};
     glm::vec3 mBitangent{0.0f};
 
-    Vertex(
+    PFVertex(
         const glm::vec3& Position = glm::vec3(0.0f),
         const glm::vec3& Normal = glm::vec3(0.0f),
         const glm::vec2& TexCoords = glm::vec2(0.0f),
@@ -59,13 +59,13 @@ struct Vertex
     }
 };
 
-struct Texture
+struct PFTexture
 {
     unsigned int mID;
     std::string mType;
 };
 
-struct TextureInfo
+struct PFTextureCreationInfo
 {
     unsigned int mIndex = 0;
     unsigned int mId = 0;
@@ -75,29 +75,28 @@ struct TextureInfo
     bool bFlipTextureOnLoad = false;
 };
 
-struct MeshCreationInfo
+struct PFMeshCreationInfo
 {
-    std::vector<Vertex> mVertices;
+    std::vector<PFVertex> mVertices;
     std::vector<unsigned int> mIndices;
     std::map<std::string, std::vector<unsigned int>> mTextureIndices;
 };
 
-class Mesh
+class PFMesh
 {
 
   public:
-    std::vector<Vertex> mVertices;
+    std::vector<PFVertex> mVertices;
     std::vector<unsigned int> mIndices;
-    std::vector<Texture> mTextures;
+    std::vector<PFTexture> mTextures;
     unsigned int mVAO;
 
   public:
-    Mesh(std::vector<Vertex> InVertices, std::vector<unsigned int> InIndices, std::vector<Texture> InTextures);
-    void Draw(Shader& shader);
+    PFMesh(std::vector<PFVertex> InVertices, std::vector<unsigned int> InIndices, std::vector<PFTexture> InTextures);
+    void Draw(PFShader& shader);
 
   private:
     //  render data
     unsigned int mVBO, mEBO;
-
     void SetupMesh();
 };

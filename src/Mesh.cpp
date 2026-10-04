@@ -1,12 +1,12 @@
 #include "Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex> InVertices, std::vector<unsigned int> InIndices, std::vector<Texture> InTextures) 
+PFMesh::PFMesh(std::vector<PFVertex> InVertices, std::vector<unsigned int> InIndices, std::vector<PFTexture> InTextures) 
     : mVertices{InVertices}, mIndices{InIndices}, mTextures{InTextures} 
 {
     SetupMesh();
 }
 
-void Mesh::Draw(Shader& shader) 
+void PFMesh::Draw(PFShader& shader) 
 {
     unsigned int DiffuseNr = 1;
     unsigned int SpecularNr = 1;
@@ -49,7 +49,7 @@ void Mesh::Draw(Shader& shader)
     glBindVertexArray(0);
 }
 
-void Mesh::SetupMesh() 
+void PFMesh::SetupMesh() 
 {
     glGenVertexArrays(1, &mVAO);
     glGenBuffers(1, &mVBO);
@@ -58,37 +58,37 @@ void Mesh::SetupMesh()
     glBindVertexArray(mVAO);
     glBindBuffer(GL_ARRAY_BUFFER, mVBO);
 
-    glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(Vertex), &mVertices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(PFVertex), &mVertices[0], GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndices.size() * sizeof(unsigned int), &mIndices[0], GL_STATIC_DRAW);
     
     //vertex Positions
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PFVertex), (void*) 0);
 
     //vertex normals
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, mNormal)); 
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(PFVertex), (void*)offsetof(PFVertex, mNormal)); 
 
     //vertex texture coord
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, mTexCoords)); 
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(PFVertex), (void*)offsetof(PFVertex, mTexCoords)); 
 
         // vertex tangent
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, mTangent));
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(PFVertex), (void*)offsetof(PFVertex, mTangent));
     // vertex bitangent
     glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, mBitangent));
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(PFVertex), (void*)offsetof(PFVertex, mBitangent));
     {
         // ids
         glEnableVertexAttribArray(5);
-        glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, m_BoneIDs));
+        glVertexAttribIPointer(5, 4, GL_INT, sizeof(PFVertex), (void*)offsetof(PFVertex, m_BoneIDs));
     
         // weights
         glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_Weights));
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(PFVertex), (void*)offsetof(PFVertex, m_Weights));
     }
 
     glBindVertexArray(0);

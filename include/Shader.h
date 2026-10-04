@@ -6,15 +6,15 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-class Shader
+class PFShader
 {
   private:
 #define LOCATION(name) glGetUniformLocation(ID, name.c_str())
   public:
     unsigned int ID;
 
-    Shader(const char* vertexPath, const char* fragmentPath);
-    Shader(const char* shaderNameWithoutExtension);
+    PFShader(const char* vertexPath, const char* fragmentPath);
+    PFShader(const char* shaderNameWithoutExtension);
 
 
     void Use() { glUseProgram(ID); }; //  activates/set the shader as active.

@@ -10,25 +10,25 @@
 #include <assimp/material.h>
 
 class aiScene;
-class Camera;
-class Shader;
+class PFCamera;
+class PFShader;
 
-class Model
+class PFModel
 {
 public:
-    Model(const char* path, bool bFlipTexturesVertically = false) { LoadModel(path, bFlipTexturesVertically); }
-    Model() {}
+    PFModel(const char* path, bool bFlipTexturesVertically = false) { LoadModel(path, bFlipTexturesVertically); }
+    PFModel() {}
 
-    void Draw(Camera& Camera, Shader& shader);
-    void LoadMeshTextures(std::vector<TextureInfo>& TextureInfoArray);
-    void AddMeshesToModel(const std::vector<MeshCreationInfo>& MeshInfoArray, std::vector<TextureInfo>& TextureInfoArray);
+    void Draw(PFCamera& Camera, PFShader& shader);
+    void LoadMeshTextures(std::vector<PFTextureCreationInfo>& TextureInfoArray);
+    void AddMeshesToModel(const std::vector<PFMeshCreationInfo>& MeshInfoArray, std::vector<PFTextureCreationInfo>& TextureInfoArray);
     void SetPosition(const glm::vec3 Position);
     void SetScale(const glm::vec3 Position);
     
     struct Utils
     {
         Utils() = delete;
-        static Model Cube();
+        static PFModel Cube();
         static unsigned char* CreateSolidTexture(unsigned char r,unsigned char g,unsigned char b,unsigned char a)
         {
             constexpr int size = 100 * 100 * 4;
@@ -48,16 +48,16 @@ public:
     };
 
 private:
-    std::vector<Mesh> mMeshes;
-    std::vector<TextureInfo> mTextures;
+    std::vector<PFMesh> mMeshes;
+    std::vector<PFTextureCreationInfo> mTextures;
 
     std::string mDirectory;
     glm::mat4 mModelTransform = glm::mat4(1.0f);
     void LoadModel(const std::string path, bool bFlipTexturesVertically);
-    void ProcessNode(aiNode* node, const aiScene* scene, std::vector<MeshCreationInfo>& InMeshCreationInfoArray,
-                     std::vector<TextureInfo>& InTextureInfoArray, const bool bFlipTexturesVertically);
-    MeshCreationInfo GatherMeshInfo(std::vector<TextureInfo>& InTextureInfoArray, aiMesh* InMesh, const aiScene* scene,
+    void ProcessNode(aiNode* node, const aiScene* scene, std::vector<PFMeshCreationInfo>& InMeshCreationInfoArray,
+                     std::vector<PFTextureCreationInfo>& InTextureInfoArray, const bool bFlipTexturesVertically);
+    PFMeshCreationInfo GatherMeshInfo(std::vector<PFTextureCreationInfo>& InTextureInfoArray, aiMesh* InMesh, const aiScene* scene,
                                     const bool bFlipTexturesVertically);
-    std::vector<unsigned int> GatherMaterialTextures(std::vector<TextureInfo>& InTextureInfoArray, aiMaterial* InMaterial, aiTextureType textureType,
+    std::vector<unsigned int> GatherMaterialTextures(std::vector<PFTextureCreationInfo>& InTextureInfoArray, aiMaterial* InMaterial, aiTextureType textureType,
                                                      std::string textureTypeName, const aiScene* InScene, const bool bFlipTexturesVertically);
 };

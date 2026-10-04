@@ -13,13 +13,12 @@
 
 #include "Camera.h"
 #include "filesystem.h"
-#include "Helpers.h"
 #include "main.h"
 #include "Model.h"
 #include "Shader.h"
 #include "Utils.h"
 
-Camera* MainCam;
+PFCamera* MainCam;
 bool bMouseCaptured = true;
 
 void FramebufferSizeCallback(GLFWwindow* Window, int width, int height)
@@ -93,7 +92,7 @@ int main()
 
 
 
-    MainCam = new Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV,
+    MainCam = new PFCamera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV,
                          (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f);
 
     // rotate about x axis.
@@ -110,11 +109,11 @@ int main()
     glfwSetMouseButtonCallback(Window, MouseButtonCallback);
 
     stbi_set_flip_vertically_on_load(false);
-    Shader ModelShader("assets/shaders/03_Models/model_loading");
+    PFShader ModelShader("assets/shaders/03_Models/model_loading");
     
     // Model Cube = Model::Utils::Cube();
-    std::vector<Model> Models = {
-        Model(FileSystem::getPath("assets/models/barbarian.glb").c_str())
+    std::vector<PFModel> Models = {
+        PFModel(FileSystem::getPath("assets/models/barbarian.glb").c_str())
     };
     while (!glfwWindowShouldClose(Window))
     {
@@ -145,7 +144,7 @@ int main()
     return 0;
 }
 
-void RenderModels(std::vector<Model>& Models, Shader& ModelShader)
+void RenderModels(std::vector<PFModel>& Models, PFShader& ModelShader)
 {
     for(auto& InModel: Models)
     {
