@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -10,8 +11,21 @@ class PFCamera
 {
   public:
     PFCamera(glm::vec3 Position, glm::vec3 CamUp, glm::vec3 CamForward, float FOV, float AspectRatio, float NearPlane, float FarPlane)
-        : Position(Position), CamUp(CamUp), CamForward(CamForward), FOV(FOV), AspectRatio(AspectRatio), NearPlane(NearPlane), FarPlane(FarPlane) {};
+        : Position(Position), CamUp(CamUp), CamForward(CamForward), FOV(FOV), AspectRatio(AspectRatio), NearPlane(NearPlane), FarPlane(FarPlane)
+    {
+        const glm::vec3 Direction = glm::normalize(CamForward);
+        Yaw = glm::degrees(std::atan2(Direction.z, Direction.x));
+        Pitch = glm::degrees(std::asin(std::clamp(Direction.y, -1.0f, 1.0f)));
+        UpdateCameraMatrices();
+    }
 
+    void SetAspectRatio(float Width, float Height){SetAspectRatio(Width/Height);}
+    void SetAspectRatio(float InAspectRatio)
+    {
+        AspectRatio = InAspectRatio;
+        UpdateCameraMatrices();
+    }
+    
     const glm::mat4& GetViewMatrix() const { return ViewMatrix; }
 
     // Returns perspective projection matrix using the camera's FOV, aspect ratio, near plane and far plane.
@@ -62,6 +76,7 @@ class PFCamera
             LastX = InXPos;
             LastY = InYPos;
             bMouseInit = true;
+            return;
         }
 
         float XOffSet = InXPos - LastX;
@@ -81,6 +96,11 @@ class PFCamera
         UpdateCameraMatrices();
     };
 
+    void ResetMousePosition()
+    {
+        bMouseInit = false;
+    }
+
     void HandleMouseScroll(double InXOffSet, double InYOffSet)
     {
         FOV -= (float)InYOffSet;
@@ -91,8 +111,6 @@ class PFCamera
 
     void UpdateCameraMatrices()
     {
-        ViewMatrix = glm::lookAt(Position, Position + CamForward, CamUp);
-
         glm::vec3 Direction;
         Direction.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
         Direction.y = sin(glm::radians(Pitch));
@@ -101,6 +119,7 @@ class PFCamera
         CamForward = glm::normalize(Direction);
         CamRight = glm::normalize(glm::cross(CamForward, glm::vec3(0.0f, 1.0f, 0.0f)));
         CamUp = glm::normalize(glm::cross(CamRight, CamForward));
+        ViewMatrix = glm::lookAt(Position, Position + CamForward, CamUp);
 
         ProjectionMatrix = glm::perspective(glm::radians(FOV), AspectRatio, NearPlane, FarPlane);
     }

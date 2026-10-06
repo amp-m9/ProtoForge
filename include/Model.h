@@ -16,7 +16,12 @@ class PFShader;
 class PFModel
 {
 public:
-    PFModel(const char* path, bool bFlipTexturesVertically = false) { LoadModel(path, bFlipTexturesVertically); }
+    PFModel(const char* path, bool bFlipTexturesVertically = false) 
+    { 
+        mDisplayName = path;
+        LoadModel(path, bFlipTexturesVertically); 
+    }
+
     PFModel() {}
 
     void Draw(PFCamera& Camera, PFShader& shader);
@@ -24,7 +29,9 @@ public:
     void AddMeshesToModel(const std::vector<PFMeshCreationInfo>& MeshInfoArray, std::vector<PFTextureCreationInfo>& TextureInfoArray);
     void SetPosition(const glm::vec3 Position);
     void SetScale(const glm::vec3 Position);
-    
+    const char* GetDisplayName(){ return mDisplayName.c_str(); }
+    void SetDisplayName(std::string InDisplayName){  mDisplayName = InDisplayName; }
+
     struct Utils
     {
         Utils() = delete;
@@ -50,7 +57,7 @@ public:
 private:
     std::vector<PFMesh> mMeshes;
     std::vector<PFTextureCreationInfo> mTextures;
-
+    std::string mDisplayName;
     std::string mDirectory;
     glm::mat4 mModelTransform = glm::mat4(1.0f);
     void LoadModel(const std::string path, bool bFlipTexturesVertically);

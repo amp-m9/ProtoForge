@@ -7,6 +7,7 @@
 #include <assimp/material.h>
 #include <iostream>
 #include <filesystem>
+#include <format>
 #include "Utils.h"
 #include "Camera.h"
 #include "Shader.h"
@@ -282,5 +283,7 @@ PFModel PFModel::Utils::Cube()
 
     PFModel DefaultCubeModel;
     DefaultCubeModel.AddMeshesToModel(MeshInfoArray, TextureInfoArray);
+    DefaultCubeModel.SetDisplayName("Cube");
+
     return DefaultCubeModel;
 }
