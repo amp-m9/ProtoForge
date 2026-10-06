@@ -105,6 +105,9 @@ add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
+target_link_libraries(imgui PUBLIC glfw)
+target_include_directories(imgui PUBLIC imgui-src imgui-src/backends)
+
 target_include_directories(imgui
     PUBLIC
         ${imgui_SOURCE_DIR}
