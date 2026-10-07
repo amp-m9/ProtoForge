@@ -5,9 +5,8 @@
 #include <format>
 #include <iostream>
 
-#include "Camera.h"
-#include "Shader.h"
-#include "Utils.h"
+#include "Graphics/Camera.h"
+#include "Graphics/Shader.h"
 
 int main()
 {
@@ -95,22 +94,31 @@ bool LoadModel(std::string& ErrorOut)
 
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
-    if (button != GLFW_MOUSE_BUTTON_RIGHT)
+    if(ImGui::GetIO().WantCaptureMouse)
     {
         return;
     }
 
-    if (action == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse)
+    if (button == GLFW_MOUSE_BUTTON_LEFT)
     {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        bMouseCaptured = true;
-        MainCam->ResetMousePosition();
+
+        return;
     }
-    else if (action == GLFW_RELEASE && bMouseCaptured)
+
+    if (button == GLFW_MOUSE_BUTTON_RIGHT)
     {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        bMouseCaptured = false;
+        if (action == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse)
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            bMouseCaptured = true;
+            MainCam->ResetMousePosition();
+        }
+        else if (action == GLFW_RELEASE && bMouseCaptured)
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            bMouseCaptured = false;
+        }
     }
 }
 

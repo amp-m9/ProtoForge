@@ -8,7 +8,7 @@
 #include <iostream>
 #include <vector>
 
-#include "Model.h"
+#include "Graphics/Model.h"
 
 class PFShader;
 class PFCamera;

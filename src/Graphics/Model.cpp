@@ -1,4 +1,4 @@
-#include "Model.h"
+#include "Graphics/Model.h"
 
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -9,10 +9,10 @@
 #include <filesystem>
 #include <format>
 
-#include "Camera.h"
-#include "Constants.h"
-#include "Shader.h"
-#include "Utils.h"
+#include "Graphics/Camera.h"
+#include "Graphics/Shader.h"
+#include "Utils/Vec3Constants.h"
+#include "Utils/TextureLoadingUtils.h"
 
 void PFModel::Draw(PFCamera& Camera, PFShader& Shader)
 {
@@ -219,9 +219,9 @@ void PFModel::SetRotation(const float X, const float Y, const float Z)
     // x, y, z
     std::pair<float, glm::vec3> rotations[3] = 
     {
-        { X, Constants::Vec3::XAxis},
-        { Y, Constants::Vec3::YAxis},
-        { Z, Constants::Vec3::ZAxis}
+        { X, Vec3::XAxis},
+        { Y, Vec3::YAxis},
+        { Z, Vec3::ZAxis}
     };
 
     mRotationQuat = glm::mat4(1.0);

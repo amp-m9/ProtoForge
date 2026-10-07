@@ -1,9 +1,9 @@
-#include "Shader.h"
+#include "Graphics/Shader.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <assert.h>
-#include <filesystem.h>
+#include "Utils/filesystem.h"
 
 PFShader::PFShader(const char* vertexPath, const char* fragmentPath)
 {

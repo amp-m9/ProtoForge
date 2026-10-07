@@ -9,17 +9,6 @@
 #include <assimp/material.h>
 #include <assimp/texture.h>
 
-template <typename T, size_t N> // returns size of C-style arrays
-unsigned int Length(T (&Array)[N])
-{
-    if (sizeof(Array))
-    {
-        return sizeof(Array) / sizeof(*Array);
-    }
-
-    return 0;
-}
-
 template<typename T>
 concept ValidType = std::same_as<T, unsigned char> ||
                     std::same_as<T, aiTexel>;

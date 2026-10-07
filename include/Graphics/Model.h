@@ -6,7 +6,7 @@
 #include <array>
 #include <cstdint>
 
-#include "Mesh.h"
+#include "Graphics/Mesh.h"
 #include <assimp/scene.h>
 #include <assimp/mesh.h>
 #include <assimp/material.h>
