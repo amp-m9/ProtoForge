@@ -1,26 +1,57 @@
+#include "main.h"
+
 #include <algorithm>
 #include <assert.h>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
-#include <iostream>
-#include <stb_image.h>
 #include <format>
+#include <iostream>
 
 #include "Camera.h"
-#include "filesystem.h"
-#include "main.h"
-#include "Model.h"
 #include "Shader.h"
 #include "Utils.h"
 
-PFCamera* MainCam;
-bool bMouseCaptured = false;
+int main()
+{
+    auto* Window = InitOpenGLAndUI(); 
+    if(!Window)
+    {
+        return -1;
+    }
+
+    MainCam = new PFCamera(
+        glm::vec3(0.0f, 0.0f, 3.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f),
+        glm::vec3(0.0f, 0.0f, -1.0f),
+        45.0f,
+        (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f
+    );
+
+    float LastTime = glfwGetTime();
+    PFShader ModelShader("assets/shaders/03_Models/model_loading");
+    Models.push_back(PFModel("assets/models/barbarian.glb"));
+    Models[0].SetScale(glm::vec3(30.0));
+    while (!glfwWindowShouldClose(Window))
+    {
+        DeltaTime = glfwGetTime() - LastTime;
+        LastTime = glfwGetTime();
+        glClearColor(1.f, 1.f, 1.f, 1.0f);
+        glClear(ClearMask);
+
+        ProcessInput(Window);
+        if (bMouseCaptured)
+        {
+            MainCam->ProcessInput(Window, DeltaTime);
+        }
+
+        RenderModels(Models, ModelShader);
+        UpdateUI();
+
+        glfwSwapBuffers(Window);
+        glfwPollEvents();
+    }
+
+    EndUIAndOpenGL();
+    return 0;
+}
 
 void ProcessInput(GLFWwindow* Window)
 {
@@ -106,91 +137,19 @@ void DropCallback(GLFWwindow* window, int path_count, const char* paths[])
 
 }
 
-int main()
-{
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    
-    GLFWwindow* Window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (Window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-
-    glfwMakeContextCurrent(Window);
-
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-
-    glViewport(0, 0, 800, 600);
-
-
-    IMGUI_CHECKVERSION();
-
-    ImGui::CreateContext();
-
-    ImGui::StyleColorsDark();
-
-    glfwSetCursorPosCallback(Window, MouseCallback);
-    glfwSetScrollCallback(Window, ScrollCallback);
-    glfwSetMouseButtonCallback(Window, MouseButtonCallback);
-    glfwSetDropCallback(Window, DropCallback);
-    glfwSetFramebufferSizeCallback(Window, WindowResizeCallback);
-
-    ImGui_ImplGlfw_InitForOpenGL(Window, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
-
-    MainCam = new PFCamera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), FOV,
-                         (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f);
-
-    // rotate about x axis.
-    float LastTime = glfwGetTime();
-
-    glEnable(GL_DEPTH_TEST);
-    GLbitfield ClearMask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
-    stbi_set_flip_vertically_on_load(false);
-    PFShader ModelShader("assets/shaders/03_Models/model_loading");
-    
-    while (!glfwWindowShouldClose(Window))
-    {
-        DeltaTime = glfwGetTime() - LastTime;
-        LastTime = glfwGetTime();
-        glClearColor(1.f, 1.f, 1.f, 1.0f);
-        glClear(ClearMask);
-
-        ProcessInput(Window);
-        if (bMouseCaptured)
-        {
-            MainCam->ProcessInput(Window, DeltaTime);
-        }
-
-        RenderModels(Models, ModelShader);
-
-        UpdateUI();
-
-        glfwSwapBuffers(Window);
-        glfwPollEvents();
-    }
-
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-    
-    glfwTerminate();
-    return 0;
-}
-
 void RenderModels(std::vector<PFModel>& Models, PFShader& ModelShader)
 {
+    float Time = glfwGetTime();
+
     for(auto& InModel: Models)
     {
+        float x = sin(Time);
+        float y = cos(Time);
+        glm::vec3 Position(x, y, 0);
+        Position *= 3;
+        
+        InModel.SetPosition(Position);
+        InModel.SetRotation(0, y, 0);
         InModel.Draw(*MainCam, ModelShader);
     }
 }

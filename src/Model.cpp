@@ -8,9 +8,11 @@
 #include <iostream>
 #include <filesystem>
 #include <format>
-#include "Utils.h"
+
 #include "Camera.h"
+#include "Constants.h"
 #include "Shader.h"
+#include "Utils.h"
 
 void PFModel::Draw(PFCamera& Camera, PFShader& Shader)
 {
@@ -202,10 +204,45 @@ void PFModel::AddMeshesToModel(const std::vector<PFMeshCreationInfo>& MeshInfoAr
 
 void PFModel::SetPosition(const glm::vec3 Position) 
 {
-    // mModelTransform.
+    mPosition = Position;
+    UpdateProjectionMatrix();
 }
 
-void PFModel::SetScale(const glm::vec3 Position) {}
+void PFModel::SetScale(const glm::vec3 Scale)
+{
+    mScale = Scale;
+    UpdateProjectionMatrix();
+}
+
+void PFModel::SetRotation(const float X, const float Y, const float Z) 
+{
+    // x, y, z
+    std::pair<float, glm::vec3> rotations[3] = 
+    {
+        { X, Constants::Vec3::XAxis},
+        { Y, Constants::Vec3::YAxis},
+        { Z, Constants::Vec3::ZAxis}
+    };
+
+    mRotationQuat = glm::mat4(1.0);
+
+    for(auto index : GetRotationOrderFromEnum(mRotationType))
+    {
+        auto [angle, axis] = rotations[index];
+        mRotationQuat = glm::rotate(mRotationQuat, angle, axis);
+    }
+
+    UpdateProjectionMatrix();
+}
+
+void PFModel::UpdateProjectionMatrix()
+{
+    mModelTransform = glm::mat4(1.0f);
+    
+    mModelTransform = glm::translate(mModelTransform, mPosition);
+    mModelTransform *= mRotationQuat;
+    mModelTransform = glm::scale(mModelTransform, mScale);
+}
 
 PFModel PFModel::Utils::Cube()
 {
