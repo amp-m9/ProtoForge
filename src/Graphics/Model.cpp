@@ -19,7 +19,7 @@ void PFModel::Draw(PFCamera& Camera, PFShader& Shader)
     Shader.Use();
     Shader.SetMat4("projection", Camera.GetProjectionMatrix());
     Shader.SetMat4("view", Camera.GetViewMatrix());
-    Shader.SetMat4("model", mModelTransform);
+    Shader.SetMat4("model", mLocalTransform);
 
     for (PFMesh& mesh : mMeshes)
     {
@@ -200,48 +200,6 @@ void PFModel::AddMeshesToModel(const std::vector<PFMeshCreationInfo>& MeshInfoAr
 
         mMeshes.push_back(PFMesh(MeshInfo.mVertices, MeshInfo.mIndices, Textures));
     }
-}
-
-void PFModel::SetPosition(const glm::vec3 Position) 
-{
-    mPosition = Position;
-    UpdateProjectionMatrix();
-}
-
-void PFModel::SetScale(const glm::vec3 Scale)
-{
-    mScale = Scale;
-    UpdateProjectionMatrix();
-}
-
-void PFModel::SetRotation(const float X, const float Y, const float Z) 
-{
-    // x, y, z
-    std::pair<float, glm::vec3> rotations[3] = 
-    {
-        { X, Vec3::XAxis},
-        { Y, Vec3::YAxis},
-        { Z, Vec3::ZAxis}
-    };
-
-    mRotationQuat = glm::mat4(1.0);
-
-    for(auto index : GetRotationOrderFromEnum(mRotationType))
-    {
-        auto [angle, axis] = rotations[index];
-        mRotationQuat = glm::rotate(mRotationQuat, angle, axis);
-    }
-
-    UpdateProjectionMatrix();
-}
-
-void PFModel::UpdateProjectionMatrix()
-{
-    mModelTransform = glm::mat4(1.0f);
-    
-    mModelTransform = glm::translate(mModelTransform, mPosition);
-    mModelTransform *= mRotationQuat;
-    mModelTransform = glm::scale(mModelTransform, mScale);
 }
 
 PFModel PFModel::Utils::Cube()

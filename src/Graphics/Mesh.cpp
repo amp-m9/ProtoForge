@@ -1,4 +1,5 @@
 #include "Graphics/Mesh.h"
+#include "Utils/Vec3Constants.h"
 
 PFMesh::PFMesh(std::vector<PFVertex> InVertices, std::vector<unsigned int> InIndices, std::vector<PFTexture> InTextures) 
     : mVertices{InVertices}, mIndices{InIndices}, mTextures{InTextures} 
