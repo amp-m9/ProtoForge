@@ -26,9 +26,8 @@ class PFCamera
         UpdateCameraMatrices();
     }
     
-    const glm::mat4& GetViewMatrix() const { return ViewMatrix; }
-
     // Returns perspective projection matrix using the camera's FOV, aspect ratio, near plane and far plane.
+    const glm::mat4& GetViewMatrix() const { return ViewMatrix; }
     const glm::mat4& GetProjectionMatrix() const { return ProjectionMatrix; }
     const glm::vec3& GetPosition() const { return Position; }
     const glm::vec3& GetForward() const { return CamForward; }

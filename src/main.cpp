@@ -5,29 +5,34 @@
 #include <format>
 #include <iostream>
 
+#include "Utils/Globals.h"
 #include "Graphics/Camera.h"
+#include "Graphics/Model.h"
 #include "Graphics/Shader.h"
+
+PFCamera* Globals::MainCam = new PFCamera(
+        glm::vec3(0.0f, 0.0f, 3.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f),
+        glm::vec3(0.0f, 0.0f, -1.0f),
+        45.0f,
+        (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 3000.f
+    );
 
 int main()
 {
+    CurrentScreenHeight = SCR_HEIGHT;
+    CurrentScreenWidth = SCR_WIDTH;
+
     auto* Window = InitOpenGLAndUI(); 
     if(!Window)
     {
         return -1;
     }
 
-    MainCam = new PFCamera(
-        glm::vec3(0.0f, 0.0f, 3.0f),
-        glm::vec3(0.0f, 1.0f, 0.0f),
-        glm::vec3(0.0f, 0.0f, -1.0f),
-        45.0f,
-        (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.f
-    );
-
     float LastTime = glfwGetTime();
     PFShader ModelShader("assets/shaders/03_Models/model_loading");
-    Models.push_back(PFModel("assets/models/barbarian.glb"));
-    Models[0].SetScale(glm::vec3(30.0));
+    Objects.push_back(new PFModel("assets/models/barbarian.glb"));
+    // Objects[0]->SetScale(glm::vec3(30.0));
     while (!glfwWindowShouldClose(Window))
     {
         DeltaTime = glfwGetTime() - LastTime;
@@ -38,10 +43,10 @@ int main()
         ProcessInput(Window);
         if (bMouseCaptured)
         {
-            MainCam->ProcessInput(Window, DeltaTime);
+            Globals::MainCam->ProcessInput(Window, DeltaTime);
         }
 
-        RenderModels(Models, ModelShader);
+        RenderModels(Objects, ModelShader);
         UpdateUI();
 
         glfwSwapBuffers(Window);
@@ -64,32 +69,30 @@ void ScrollCallback(GLFWwindow* Window, double InXOffSet, double InYOffSet)
 {
     if (bMouseCaptured)
     {
-        MainCam->HandleMouseScroll(InXOffSet, InYOffSet);
+        Globals::MainCam->HandleMouseScroll(InXOffSet, InYOffSet);
     }
 }
 
 void WindowResizeCallback(GLFWwindow* window, int width, int height) 
 {
     glViewport(0, 0, width, height); // lower left corner followed by w*h
-    if(MainCam)
+    if(Globals::MainCam)
     {
-        MainCam->SetAspectRatio(width, height);
+        Globals::MainCam->SetAspectRatio(width, height);
+        CurrentScreenWidth = width;
+        CurrentScreenHeight = height;
     }
 }
 
 bool LoadModel(std::string& ErrorOut)
 {
-    PFModel Model(FilePath);
-    // if(Model.IsLoaded())
-    {
-        Models.push_back(Model);
-        FilePath[0] = '\0';
-        return true;
+    
+    Objects.push_back(new PFModel(FilePath));
+    FilePath[0] = '\0';
+    return true;
 
-    }
-
-    ErrorOut = std::format("Failed to load model at {}",  FilePath);
-    return false;
+    // ErrorOut = std::format("Failed to load model at {}",  FilePath);
+    // return false;
 }
 
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -102,6 +105,14 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     if (button == GLFW_MOUSE_BUTTON_LEFT)
     {
 
+       (PFRay(
+            glm::vec2(MouseX, MouseY),
+            glm::vec2(CurrentScreenWidth, CurrentScreenHeight),
+            Globals::MainCam->GetProjectionMatrix(),
+            Globals::MainCam->GetViewMatrix(),
+            Globals::MainCam->GetPosition()
+        ).Cast(Objects));
+        
         return;
     }
 
@@ -112,7 +123,7 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             bMouseCaptured = true;
-            MainCam->ResetMousePosition();
+            Globals::MainCam->ResetMousePosition();
         }
         else if (action == GLFW_RELEASE && bMouseCaptured)
         {
@@ -145,20 +156,23 @@ void DropCallback(GLFWwindow* window, int path_count, const char* paths[])
 
 }
 
-void RenderModels(std::vector<PFModel>& Models, PFShader& ModelShader)
+void RenderModels(std::vector<PFObject3D*>& InObjects, PFShader& ModelShader)
 {
     float Time = glfwGetTime();
 
-    for(auto& InModel: Models)
+    for(auto& InObject: InObjects)
     {
         float x = sin(Time);
         float y = cos(Time);
         glm::vec3 Position(x, y, 0);
         Position *= 3;
         
-        InModel.SetPosition(Position);
-        InModel.SetRotation(0, y, 0);
-        InModel.Draw(*MainCam, ModelShader);
+        // InModel.SetPosition(Position);
+        InObject->SetRotation(0, 2*y, 0);
+        if(PFModel* Model = dynamic_cast<PFModel*> (InObject))
+        {
+            Model->Draw(*Globals::MainCam, ModelShader);
+        }
     }
 }
 
@@ -184,9 +198,9 @@ void UpdateUI()
     {
         // Do something
     }
-    for(auto Model : Models)
+    for(auto Model : Objects)
     {
-        ImGui::Text(Model.GetDisplayName());
+        ImGui::Text(Model->GetDisplayName());
     }
     ImGui::End();
 
@@ -199,6 +213,6 @@ void MouseCallback(GLFWwindow* Window, double InXPos, double InYPos)
 {
     if (bMouseCaptured)
     {
-        MainCam->HandleMouseMove(InXPos, InYPos, DeltaTime);
+        Globals::MainCam->HandleMouseMove(InXPos, InYPos, DeltaTime);
     }
 }

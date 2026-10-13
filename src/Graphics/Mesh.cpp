@@ -1,9 +1,16 @@
+#include <algorithm> 
+#include <glm/gtc/type_ptr.hpp>
+#include <memory>
+
 #include "Graphics/Mesh.h"
+#include "Graphics/Model.h"
+#include "Utils/DebugDraw.h"
 #include "Utils/Vec3Constants.h"
 
-PFMesh::PFMesh(std::vector<PFVertex> InVertices, std::vector<unsigned int> InIndices, std::vector<PFTexture> InTextures) 
-    : mVertices{InVertices}, mIndices{InIndices}, mTextures{InTextures} 
+PFMesh::PFMesh(std::vector<PFVertex> InVertices, std::vector<unsigned int> InIndices, std::vector<PFTexture> InTextures, const std::string InName) 
+    : mVertices{InVertices}, mIndices{InIndices}, mTextures{InTextures}
 {
+    mName = InName;
     SetupMesh();
 }
 
@@ -48,9 +55,63 @@ void PFMesh::Draw(PFShader& shader)
     glBindVertexArray(mVAO);
     glDrawElements(GL_TRIANGLES, mIndices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
+    if (mbDrawBounds)
+    {
+        DebugDraw::DrawBounds(mBounds);
+    }
 }
 
-void PFMesh::SetupMesh() 
+void PFMesh::SetParent(PFModel* InParent)
+{
+    mParent = InParent;
+    UpdateBounds();
+}
+
+void PFMesh::UpdateBounds()
+{
+    UpdateBounds(GetWorldTransform());
+}
+
+void PFMesh::UpdateBounds(const glm::mat4& Transform)
+{
+    mBounds = AABB(mVertices, Transform);
+}
+
+std::vector<glm::vec3> PFMesh::GetVerticesInWorldSpace()
+{
+    std::vector<glm::vec3> WorldSpaceVertices;
+    glm::mat4 WorldTransform = GetWorldTransform();
+    for(auto& Vertex : mVertices)
+    {
+        WorldSpaceVertices.push_back(WorldTransform * glm::vec4(Vertex.mPosition, 1.0f));
+    }
+
+    return WorldSpaceVertices;
+}
+
+const uint PFMesh::GetVertexCount()
+{
+    return mVertices.size();
+}
+
+std::vector<uint> PFMesh::GetIndices()
+{
+    return mIndices;
+}
+
+const glm::mat4 PFMesh::GetWorldTransform()
+{
+    glm::mat4 ResultingTransform = mLocalTransform;
+    if (mParent)
+    {
+        ResultingTransform = mParent->GetWorldTransform() * ResultingTransform;
+    }
+
+    return ResultingTransform;
+}
+
+void PFMesh::SetupMesh()
 {
     glGenVertexArrays(1, &mVAO);
     glGenBuffers(1, &mVBO);

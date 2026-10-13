@@ -8,12 +8,14 @@ void PFObject3D::SetPosition(const glm::vec3 Position)
 {
     mPosition = Position;
     UpdateTransformMatrix();
+    UpdateBounds();
 }
 
 void PFObject3D::SetScale(const glm::vec3 Scale)
 {
     mScale = Scale;
     UpdateTransformMatrix();
+    UpdateBounds();
 }
 
 void PFObject3D::SetRotation(const float X, const float Y, const float Z) 
@@ -35,6 +37,7 @@ void PFObject3D::SetRotation(const float X, const float Y, const float Z)
     }
 
     UpdateTransformMatrix();
+    UpdateBounds();
 }
 
 void PFObject3D::UpdateTransformMatrix()
@@ -44,4 +47,9 @@ void PFObject3D::UpdateTransformMatrix()
     mLocalTransform = glm::translate(mLocalTransform, mPosition);
     mLocalTransform *= mRotationQuat;
     mLocalTransform = glm::scale(mLocalTransform, mScale);
+}
+
+const glm::mat4 PFObject3D::GetWorldTransform()
+{
+    return mLocalTransform;
 }

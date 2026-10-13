@@ -16,14 +16,30 @@
 
 void PFModel::Draw(PFCamera& Camera, PFShader& Shader)
 {
+    UpdateBounds();
+
     Shader.Use();
     Shader.SetMat4("projection", Camera.GetProjectionMatrix());
     Shader.SetMat4("view", Camera.GetViewMatrix());
-    Shader.SetMat4("model", mLocalTransform);
+    Shader.SetMat4("model", GetWorldTransform());
 
-    for (PFMesh& mesh : mMeshes)
+    for (PFMesh* mesh : mMeshes)
     {
-        mesh.Draw(Shader);
+        if(mesh)
+        {
+            mesh->Draw(Shader);
+        }
+    }
+}
+
+void PFModel::UpdateBounds()
+{
+    mBounds = AABB();
+
+    for (PFMesh* mesh : mMeshes)
+    {
+        mesh->UpdateBounds(GetWorldTransform());
+        mBounds = mBounds + mesh->GetBounds();
     }
 }
 
@@ -41,45 +57,50 @@ void PFModel::LoadModel(const std::string path, const bool bFlipTexturesVertical
 
     std::vector<PFMeshCreationInfo> MeshCreationInfoArray;
     std::vector<PFTextureCreationInfo> TextureInfoArray;
-    ProcessNode(Scene->mRootNode, Scene, MeshCreationInfoArray, TextureInfoArray, bFlipTexturesVertically);
+    ProcessNode(*Scene->mRootNode, *Scene, MeshCreationInfoArray, TextureInfoArray, bFlipTexturesVertically);
     LoadMeshTextures(TextureInfoArray);
     AddMeshesToModel(MeshCreationInfoArray, TextureInfoArray);
 }
 
-void PFModel::ProcessNode(aiNode* InNode, const aiScene* InScene, std::vector<PFMeshCreationInfo>& InMeshCreationInfoArray,
+void PFModel::ProcessNode(aiNode& InNode, const aiScene& InScene, std::vector<PFMeshCreationInfo>& InMeshCreationInfoArray,
                         std::vector<PFTextureCreationInfo>& InTextureInfoArray, bool bFlipTexturesVertically)
 {
     // process all the node's meshes (if any)
-    for (unsigned int i = 0; i < InNode->mNumMeshes; i++)
+    for (unsigned int i = 0; i < InNode.mNumMeshes; i++)
     {
-        aiMesh* mesh = InScene->mMeshes[InNode->mMeshes[i]];
-        InMeshCreationInfoArray.push_back(GatherMeshInfo(InTextureInfoArray, mesh, InScene, bFlipTexturesVertically));
+        if(aiMesh* mesh = InScene.mMeshes[InNode.mMeshes[i]])
+        {
+            InMeshCreationInfoArray.push_back(GatherMeshInfo(InTextureInfoArray, *mesh, InScene, bFlipTexturesVertically));
+        }
     }
 
     // then do the same for each of its children
-    for (unsigned int i = 0; i < InNode->mNumChildren; i++)
+    for (unsigned int i = 0; i < InNode.mNumChildren; i++)
     {
-        ProcessNode(InNode->mChildren[i], InScene, InMeshCreationInfoArray, InTextureInfoArray, bFlipTexturesVertically);
+        if(aiNode* ChildNode = InNode.mChildren[i])
+        {
+            ProcessNode(*ChildNode, InScene, InMeshCreationInfoArray, InTextureInfoArray, bFlipTexturesVertically);
+        }
     }
 }
 
-PFMeshCreationInfo PFModel::GatherMeshInfo(std::vector<PFTextureCreationInfo>& OutTextureInfoArray, aiMesh* InMesh, const aiScene* InScene,
+PFMeshCreationInfo PFModel::GatherMeshInfo(std::vector<PFTextureCreationInfo>& OutTextureInfoArray, aiMesh& InMesh, const aiScene& InScene,
                                        const bool bFlipTexturesVertically)
 {
     std::vector<PFVertex> Vertices;
     std::vector<unsigned int> Indices;
     std::vector<PFTexture> Textures;
 
-    for (unsigned int i = 0; i < InMesh->mNumVertices; i++)
+    for (unsigned int i = 0; i < InMesh.mNumVertices; i++)
     {
         PFVertex Vert;
 
-        Vert.SetPosition(&InMesh->mVertices[i]);
-        Vert.SetNormal(&InMesh->mNormals[i]);
+        Vert.SetPosition(&InMesh.mVertices[i]);
+        Vert.SetNormal(&InMesh.mNormals[i]);
 
-        if (InMesh->mTextureCoords[0])
+        if (InMesh.mTextureCoords[0])
         {
-            Vert.SetTexCoords(&InMesh->mTextureCoords[0][i]);
+            Vert.SetTexCoords(&InMesh.mTextureCoords[0][i]);
         }
         else
         {
@@ -89,9 +110,9 @@ PFMeshCreationInfo PFModel::GatherMeshInfo(std::vector<PFTextureCreationInfo>& O
         Vertices.push_back(Vert);
     }
 
-    for (unsigned int i = 0; i < InMesh->mNumFaces; i++)
+    for (unsigned int i = 0; i < InMesh.mNumFaces; i++)
     {
-        aiFace Face = InMesh->mFaces[i];
+        aiFace Face = InMesh.mFaces[i];
         for (unsigned int j = 0; j < Face.mNumIndices; j++)
         {
             Indices.push_back(Face.mIndices[j]);
@@ -112,12 +133,14 @@ PFMeshCreationInfo PFModel::GatherMeshInfo(std::vector<PFTextureCreationInfo>& O
     };
 
     std::map<std::string, std::vector<unsigned int>> TextureIndices;
-    if (InMesh->mMaterialIndex >= 0)
+    if (InMesh.mMaterialIndex >= 0)
     {
-        aiMaterial* material = InScene->mMaterials[InMesh->mMaterialIndex];
-        for (auto& Type : {TEXTURE_DIFFUSE, TEXTURE_SPECULAR, TEXTURE_NORMAL, TEXTURE_HEIGHT})
+        if(aiMaterial* material = InScene.mMaterials[InMesh.mMaterialIndex])
         {
-            TextureIndices[Type] = GatherMaterialTextures(OutTextureInfoArray, material, GetAiType(Type), Type, InScene, bFlipTexturesVertically);
+            for (auto& Type : {TEXTURE_DIFFUSE, TEXTURE_SPECULAR, TEXTURE_NORMAL, TEXTURE_HEIGHT})
+            {
+                TextureIndices[Type] = GatherMaterialTextures(OutTextureInfoArray, *material, GetAiType(Type), Type, InScene, bFlipTexturesVertically);
+            }
         }
     }
 
@@ -125,20 +148,20 @@ PFMeshCreationInfo PFModel::GatherMeshInfo(std::vector<PFTextureCreationInfo>& O
     Info.mVertices = Vertices;
     Info.mIndices = Indices;
     Info.mTextureIndices = TextureIndices;
-
+    Info.mName = InMesh.mName.C_Str();
     return Info;
 }
 
-std::vector<unsigned int> PFModel::GatherMaterialTextures(std::vector<PFTextureCreationInfo>& OutTextureInfoArray, aiMaterial* MaterialPtr,
-                                                        aiTextureType TextureType, std::string TextureTypeName, const aiScene* InScene,
+std::vector<unsigned int> PFModel::GatherMaterialTextures(std::vector<PFTextureCreationInfo>& OutTextureInfoArray, aiMaterial& MaterialPtr,
+                                                        aiTextureType TextureType, std::string TextureTypeName, const aiScene& InScene,
                                                         const bool bFlipTexturesVertically)
 {
     std::vector<unsigned int> Textures;
-    for (unsigned int i = 0; i < MaterialPtr->GetTextureCount(TextureType); i++)
+    for (unsigned int i = 0; i < MaterialPtr.GetTextureCount(TextureType); i++)
     {
         aiString TexturePath;
         // auto data = InScene->mTextures[i]->pcData;
-        MaterialPtr->GetTexture(TextureType, i, &TexturePath);
+        MaterialPtr.GetTexture(TextureType, i, &TexturePath);
         // check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
         bool bSkip = false;
 
@@ -153,7 +176,7 @@ std::vector<unsigned int> PFModel::GatherMaterialTextures(std::vector<PFTextureC
 
         if (!bSkip)
         {
-            std::pair<const aiTexture*, int> EmbeddedTextureInfo = InScene->GetEmbeddedTextureAndIndex(TexturePath.C_Str());
+            std::pair<const aiTexture*, int> EmbeddedTextureInfo = InScene.GetEmbeddedTextureAndIndex(TexturePath.C_Str());
             PFTextureCreationInfo texture;
             texture.mIndex = EmbeddedTextureInfo.second;
             texture.mType = TextureTypeName;
@@ -198,8 +221,38 @@ void PFModel::AddMeshesToModel(const std::vector<PFMeshCreationInfo>& MeshInfoAr
             }
         }
 
-        mMeshes.push_back(PFMesh(MeshInfo.mVertices, MeshInfo.mIndices, Textures));
+        mMeshes.push_back(new PFMesh(MeshInfo.mVertices, MeshInfo.mIndices, Textures));
     }
+}
+
+std::vector<glm::vec3> PFModel::GetVerticesInWorldSpace()
+{
+    std::vector<glm::vec3> Vertices;
+    for (auto mesh:mMeshes)
+    {
+        auto MeshVertices = mesh->GetVerticesInWorldSpace();
+        Vertices.insert(Vertices.end(), MeshVertices.begin(), MeshVertices.end());
+    }
+    return Vertices;
+}
+
+std::vector<uint> PFModel::GetIndices()
+{
+    std::vector<uint> Indices;
+    uint Offset = 0;
+    for(auto& Mesh : mMeshes)
+    {
+        if(Mesh)
+        {
+            std::vector<uint> ChildIndices = Mesh->GetIndices();
+            Offset += Mesh->GetVertexCount();
+            std::for_each(ChildIndices.begin() , ChildIndices.end(), [Offset](uint &i){ i += Offset; });
+            Indices.insert(Indices.end(), ChildIndices.begin(), ChildIndices.end());
+        }
+    }
+    
+    return Indices;
+
 }
 
 PFModel PFModel::Utils::Cube()

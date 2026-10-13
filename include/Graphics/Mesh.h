@@ -24,13 +24,32 @@ struct PFMeshCreationInfo
     std::vector<PFVertex> mVertices;
     std::vector<unsigned int> mIndices;
     std::map<std::string, std::vector<unsigned int>> mTextureIndices;
+    std::string mName;
 };
+
+struct PFObjectTriangleData
+{
+    std::vector<glm::vec3> Vertices;
+    std::vector<glm::uint> Indices;
+};
+
+class PFModel;
 
 class PFMesh : public PFObject3D
 {
 public:
-    PFMesh(std::vector<PFVertex> InVertices, std::vector<unsigned int> InIndices, std::vector<PFTexture> InTextures);
+    PFMesh(std::vector<PFVertex> InVertices, std::vector<unsigned int> InIndices, std::vector<PFTexture> InTextures, const std::string InName = std::string());
     void Draw(PFShader& shader);
+    void SetParent(PFModel* InParent);
+    virtual void UpdateBounds() override;
+    void UpdateBounds(const glm::mat4& Transform);
+
+    virtual std::vector<glm::vec3>GetVerticesInWorldSpace() override;
+    virtual const uint GetVertexCount() override;
+    virtual std::vector<uint>GetIndices() override;
+    virtual const glm::mat4 GetWorldTransform() override;
+    const PFModel* GetParent(){ return mParent;};
+    
     
 public:
     std::vector<PFVertex> mVertices;
@@ -39,6 +58,9 @@ public:
     unsigned int mVAO;
 
 private:
-    unsigned int mVBO, mEBO;
+    PFModel* mParent;
     void SetupMesh();
+    unsigned int mVBO, mEBO;
+    unsigned int mBoundsVAO, mBoundsVBO;
+    bool mbDrawBounds = true;
 };

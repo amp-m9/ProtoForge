@@ -7,30 +7,35 @@
 #include <imgui_impl_opengl3.h>
 #include <iostream>
 #include <vector>
-
-#include "Graphics/Model.h"
+#include "Utils/Globals.h"
+#include "Input/Ray.h"
 
 class PFShader;
-class PFCamera;
+class PFObject3D;
 
+std::vector<PFRay> Rays;
 // time between current frame and last frame
 float DeltaTime = 0.0f;
-PFCamera* MainCam;
-std::vector<PFModel> Models = {};
+std::vector<PFObject3D*> Objects = {};
 static char FilePath[1024] = "";
 bool bMouseCaptured = false;
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
 GLbitfield ClearMask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
-
+float MouseX{0}, MouseY{0};
+int CurrentScreenWidth{0}, CurrentScreenHeight{0};
 bool LoadTexture(const char* fileLocation, unsigned int& TextureID, const bool bUseAlpha = false, const bool bFlipVerticallyOnLoad = false);
 void MouseCallback(GLFWwindow* Window, double xpos, double ypos);
 void UpdateUI();
-void RenderModels(std::vector<PFModel>& Models, PFShader& ModelShader);
+void RenderModels(std::vector<PFObject3D*>& Models, PFShader& ModelShader);
 void ProcessInput(GLFWwindow* Window);
 void ScrollCallback(GLFWwindow* Window, double InXOffSet, double InYOffSet);
 void WindowResizeCallback(GLFWwindow* window, int width, int height);
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+void CursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
+{
+    MouseCallback(window, xpos, ypos);
+    MouseX = (float) xpos;
+    MouseY = (float) ypos;
+};
 void DropCallback(GLFWwindow* window, int path_count, const char* paths[]);
 bool LoadModel(std::string& ErrorOut);
 
@@ -67,9 +72,9 @@ GLFWwindow* InitOpenGLAndUI()
     glfwSetCursorPosCallback(Window, MouseCallback);
     glfwSetScrollCallback(Window, ScrollCallback);
     glfwSetMouseButtonCallback(Window, MouseButtonCallback);
+    glfwSetCursorPosCallback(Window, CursorPositionCallback);
     glfwSetDropCallback(Window, DropCallback);
     glfwSetFramebufferSizeCallback(Window, WindowResizeCallback);
-
     ImGui_ImplGlfw_InitForOpenGL(Window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
     
