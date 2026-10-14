@@ -93,6 +93,17 @@ std::vector<PFRayHit> PFRay::NarrowPhase(std::vector<PFObject3D*>& Models) const
         }
     }
 
+    if (!Hits.empty())
+    {
+        const auto Furthest = std::max_element(
+            Hits.begin(), Hits.end(),
+            [](const PFRayHit& a, const PFRayHit& b)
+            {
+                return a.Dist > b.Dist;
+            }
+        );
+    }
+
     return Hits;
 }
 
@@ -149,12 +160,15 @@ bool PFRay::Intersect(PFObject3D& Object, PFRayHit& Hit) const
         return false;
     }
 
-    glm::vec3 A, B, C, OA, OB, OC, M;
     const glm::vec3 Ray = Direction * Length;
     const glm::vec3 O = Origin;
-    float U{0},V{0},W{0};
+    glm::vec3 A , B , C , 
+              OA, OB, OC, 
+              M;
 
-    float ClosestIntersectionDistance = FLT_MAX;
+    float U, V, W;
+
+    Hit.Dist = FLT_MAX;
 
     for(int i = 0; i<Indices.size(); i+=3)
     {
@@ -199,11 +213,13 @@ bool PFRay::Intersect(PFObject3D& Object, PFRayHit& Hit) const
         glm::vec3 Intersection = U*A + V*B + W*C;
         float IntersectionDistance = glm::length(Intersection - Origin);
 
-        if(IntersectionDistance < ClosestIntersectionDistance)
+        if(IntersectionDistance < Hit.Dist)
         {
             Hit.HitLocation = Intersection;
+            Hit.Object = &Object;
+            Hit.Dist = IntersectionDistance;
         }
     }
 
-    return ClosestIntersectionDistance != FLT_MAX;
+    return Hit.Dist != FLT_MAX;
 }

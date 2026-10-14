@@ -9,6 +9,73 @@
 
 class DebugDraw
 {
+public:
+    static void RenderDebugShapes(float DeltaTime)
+    {
+        const std::size_t VertexCount = Lines.size() * 2;
+        std::vector<glm::vec3> AllLines(VertexCount);
+
+        for (int i = static_cast<int>(Lines.size()) - 1; i >= 0; --i)
+        {
+            AllLines[i * 2] = Lines[i].Line[0];
+            AllLines[(i * 2) + 1] = Lines[i].Line[1];
+
+            if (Lines[i].bPersists)
+            {
+                continue;
+            }
+
+            Lines[i].LifeTime -= DeltaTime;
+            if (Lines[i].LifeTime < 0.0f)
+            {
+                Lines.erase(Lines.begin() + i);
+            }
+        }
+
+        if (!AllLines.empty())
+        {
+            DrawLines_Internal(AllLines.data(), static_cast<GLsizei>(AllLines.size()));
+        }
+    }
+
+    static void DrawPoint(glm::vec3 Point, glm::vec3 InColour = glm::vec3(1.0f, 0.0f, 0.0f), float InLifeTime = 3.f, bool bInPerstists = false)
+    {
+
+    }
+
+    static void DrawBounds(const AABB& Bounds, glm::vec3 InColour = glm::vec3(1.0f, 0.0f, 0.0f), float InLifeTime = 3.f, bool bInPerstists = false)
+    {
+        const glm::vec3 Min = Bounds.Min();
+        const glm::vec3 Max = Bounds.Max();
+
+        DrawLine({Min.x, Min.y, Min.z}, {Max.x, Min.y, Min.z}, InColour, InLifeTime, bInPerstists);
+        DrawLine({Max.x, Min.y, Min.z}, {Max.x, Max.y, Min.z}, InColour, InLifeTime, bInPerstists);
+        DrawLine({Max.x, Max.y, Min.z}, {Min.x, Max.y, Min.z}, InColour, InLifeTime, bInPerstists);
+        DrawLine({Min.x, Max.y, Min.z}, {Min.x, Min.y, Min.z}, InColour, InLifeTime, bInPerstists);
+        DrawLine({Min.x, Min.y, Max.z}, {Max.x, Min.y, Max.z}, InColour, InLifeTime, bInPerstists);
+        DrawLine({Max.x, Min.y, Max.z}, {Max.x, Max.y, Max.z}, InColour, InLifeTime, bInPerstists);
+        DrawLine({Max.x, Max.y, Max.z}, {Min.x, Max.y, Max.z}, InColour, InLifeTime, bInPerstists);
+        DrawLine({Min.x, Max.y, Max.z}, {Min.x, Min.y, Max.z}, InColour, InLifeTime, bInPerstists);
+        DrawLine({Min.x, Min.y, Min.z}, {Min.x, Min.y, Max.z}, InColour, InLifeTime, bInPerstists);
+        DrawLine({Max.x, Min.y, Min.z}, {Max.x, Min.y, Max.z}, InColour, InLifeTime, bInPerstists);
+        DrawLine({Max.x, Max.y, Min.z}, {Max.x, Max.y, Max.z}, InColour, InLifeTime, bInPerstists);
+        DrawLine({Min.x, Max.y, Min.z}, {Min.x, Max.y, Max.z}, InColour, InLifeTime, bInPerstists);
+    }
+
+
+    static void DrawLines(const glm::vec3* vertices, GLsizei vertexCount, glm::vec3 InColour = glm::vec3(1.0f, 0.0f, 0.0f), float InLifeTime = 3.f, bool bInPerstists = false)
+    {
+        for(int i = 0; i<vertexCount; i+=2)
+        {
+            Lines.push_back(DebugLine(vertices[i], vertices[i+1], InColour, InLifeTime, bInPerstists));
+        }
+    }
+
+    static void DrawLine(glm::vec3 Start, glm::vec3 End, glm::vec3 InColour = glm::vec3(1.0f, 0.0f, 0.0f), float InLifeTime = 3.f, bool bInPerstists = false)
+    {
+        Lines.push_back(DebugLine(Start, End, InColour, InLifeTime, bInPerstists));
+    }
+
 private:
     struct BaseDebugDrawData
     {
@@ -98,72 +165,5 @@ private:
 
         glDrawArrays(GL_LINES, 0, vertexCount);
         glBindVertexArray(0);
-    }
-
-public:
-    static void RenderDebugShapes(float DeltaTime)
-    {
-        const std::size_t VertexCount = Lines.size() * 2;
-        std::vector<glm::vec3> AllLines(VertexCount);
-
-        for (int i = static_cast<int>(Lines.size()) - 1; i >= 0; --i)
-        {
-            AllLines[i * 2] = Lines[i].Line[0];
-            AllLines[(i * 2) + 1] = Lines[i].Line[1];
-
-            if (Lines[i].bPersists)
-            {
-                continue;
-            }
-
-            Lines[i].LifeTime -= DeltaTime;
-            if (Lines[i].LifeTime < 0.0f)
-            {
-                Lines.erase(Lines.begin() + i);
-            }
-        }
-
-        if (!AllLines.empty())
-        {
-            DrawLines_Internal(AllLines.data(), static_cast<GLsizei>(AllLines.size()));
-        }
-    }
-
-    static void DrawPoint(glm::vec3 Point, glm::vec3 InColour = glm::vec3(1.0f, 0.0f, 0.0f), float InLifeTime = 3.f, bool bInPerstists = false)
-    {
-
-    }
-
-    static void DrawBounds(const AABB& Bounds, glm::vec3 InColour = glm::vec3(1.0f, 0.0f, 0.0f), float InLifeTime = 3.f, bool bInPerstists = false)
-    {
-        const glm::vec3 Min = Bounds.Min();
-        const glm::vec3 Max = Bounds.Max();
-
-        DrawLine({Min.x, Min.y, Min.z}, {Max.x, Min.y, Min.z}, InColour, InLifeTime, bInPerstists);
-        DrawLine({Max.x, Min.y, Min.z}, {Max.x, Max.y, Min.z}, InColour, InLifeTime, bInPerstists);
-        DrawLine({Max.x, Max.y, Min.z}, {Min.x, Max.y, Min.z}, InColour, InLifeTime, bInPerstists);
-        DrawLine({Min.x, Max.y, Min.z}, {Min.x, Min.y, Min.z}, InColour, InLifeTime, bInPerstists);
-        DrawLine({Min.x, Min.y, Max.z}, {Max.x, Min.y, Max.z}, InColour, InLifeTime, bInPerstists);
-        DrawLine({Max.x, Min.y, Max.z}, {Max.x, Max.y, Max.z}, InColour, InLifeTime, bInPerstists);
-        DrawLine({Max.x, Max.y, Max.z}, {Min.x, Max.y, Max.z}, InColour, InLifeTime, bInPerstists);
-        DrawLine({Min.x, Max.y, Max.z}, {Min.x, Min.y, Max.z}, InColour, InLifeTime, bInPerstists);
-        DrawLine({Min.x, Min.y, Min.z}, {Min.x, Min.y, Max.z}, InColour, InLifeTime, bInPerstists);
-        DrawLine({Max.x, Min.y, Min.z}, {Max.x, Min.y, Max.z}, InColour, InLifeTime, bInPerstists);
-        DrawLine({Max.x, Max.y, Min.z}, {Max.x, Max.y, Max.z}, InColour, InLifeTime, bInPerstists);
-        DrawLine({Min.x, Max.y, Min.z}, {Min.x, Max.y, Max.z}, InColour, InLifeTime, bInPerstists);
-    }
-
-
-    static void DrawLines(const glm::vec3* vertices, GLsizei vertexCount, glm::vec3 InColour = glm::vec3(1.0f, 0.0f, 0.0f), float InLifeTime = 3.f, bool bInPerstists = false)
-    {
-        for(int i = 0; i<vertexCount; i+=2)
-        {
-            Lines.push_back(DebugLine(vertices[i], vertices[i+1], InColour, InLifeTime, bInPerstists));
-        }
-    }
-
-    static void DrawLine(glm::vec3 Start, glm::vec3 End, glm::vec3 InColour = glm::vec3(1.0f, 0.0f, 0.0f), float InLifeTime = 3.f, bool bInPerstists = false)
-    {
-        Lines.push_back(DebugLine(Start, End, InColour, InLifeTime, bInPerstists));
     }
 };

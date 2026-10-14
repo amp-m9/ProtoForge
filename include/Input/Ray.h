@@ -9,7 +9,8 @@ struct AABB;
 struct PFRayHit
 {
     PFObject3D* Object;
-    glm::vec3 HitLocation;    
+    glm::vec3 HitLocation;
+    float Dist;
 };
 
 class PFRay
