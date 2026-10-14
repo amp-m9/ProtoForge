@@ -58,7 +58,7 @@ void PFMesh::Draw(PFShader& shader)
 
     if (mbDrawBounds)
     {
-        DebugDraw::DrawBounds(mBounds);
+        DebugDraw::DrawBounds(mBounds, glm::vec3(1.0f, 0, 0), 0, false);
     }
 }
 
@@ -78,7 +78,7 @@ void PFMesh::UpdateBounds(const glm::mat4& Transform)
     mBounds = AABB(mVertices, Transform);
 }
 
-std::vector<glm::vec3> PFMesh::GetVerticesInWorldSpace()
+std::vector<glm::vec3> PFMesh::GetVerticesInWorldSpace() const
 {
     std::vector<glm::vec3> WorldSpaceVertices;
     glm::mat4 WorldTransform = GetWorldTransform();
@@ -90,17 +90,17 @@ std::vector<glm::vec3> PFMesh::GetVerticesInWorldSpace()
     return WorldSpaceVertices;
 }
 
-const uint PFMesh::GetVertexCount()
+const glm::uint PFMesh::GetVertexCount() const
 {
     return mVertices.size();
 }
 
-std::vector<uint> PFMesh::GetIndices()
+std::vector<glm::uint> PFMesh::GetIndices() const
 {
     return mIndices;
 }
 
-const glm::mat4 PFMesh::GetWorldTransform()
+const glm::mat4 PFMesh::GetWorldTransform() const
 {
     glm::mat4 ResultingTransform = mLocalTransform;
     if (mParent)

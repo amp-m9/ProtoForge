@@ -19,13 +19,13 @@ public:
     void SetScale(const glm::vec3 Scale);
     void SetRotation(const float X, const float Y, const float Z);
     void UpdateTransformMatrix();
-    const glm::mat4 GetTransform(){ return mLocalTransform; };
-    virtual const glm::mat4 GetWorldTransform();
-    const AABB GetBounds(){ return mBounds; };
+    const glm::mat4 GetTransform() const{ return mLocalTransform; };
+    virtual const glm::mat4 GetWorldTransform() const;
+    const AABB GetBounds() const { return mBounds; };
     virtual void UpdateBounds() = 0;
-    virtual std::vector<glm::vec3>GetVerticesInWorldSpace(){ return std::vector<glm::vec3>(); };
-    virtual const uint GetVertexCount(){ return 0; };
-    virtual std::vector<uint>GetIndices(){ return std::vector<uint>(); };
+    virtual std::vector<glm::vec3>GetVerticesInWorldSpace() const { return std::vector<glm::vec3>(); };
+    virtual const uint GetVertexCount() const { return 0; };
+    virtual std::vector<uint>GetIndices() const { return std::vector<uint>(); };
 
 protected:
     AABB mBounds;

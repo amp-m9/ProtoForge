@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "Utils/Globals.h"
+#include "Utils/DebugDraw.h"
 #include "Graphics/Camera.h"
 #include "Graphics/Model.h"
 #include "Graphics/Shader.h"
@@ -47,6 +48,7 @@ int main()
         }
 
         RenderModels(Objects, ModelShader);
+        DebugDraw::RenderDebugShapes(DeltaTime);
         UpdateUI();
 
         glfwSwapBuffers(Window);
@@ -90,9 +92,6 @@ bool LoadModel(std::string& ErrorOut)
     Objects.push_back(new PFModel(FilePath));
     FilePath[0] = '\0';
     return true;
-
-    // ErrorOut = std::format("Failed to load model at {}",  FilePath);
-    // return false;
 }
 
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -110,7 +109,9 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
             glm::vec2(CurrentScreenWidth, CurrentScreenHeight),
             Globals::MainCam->GetProjectionMatrix(),
             Globals::MainCam->GetViewMatrix(),
-            Globals::MainCam->GetPosition()
+            Globals::MainCam->GetPosition(),
+            1000.f,
+            true
         ).Cast(Objects));
         
         return;

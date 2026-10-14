@@ -37,9 +37,9 @@ public:
     
     const std::vector<PFMesh*> GetChildren() { return mMeshes; };
     
-    virtual std::vector<glm::vec3>GetVerticesInWorldSpace() override;
-    // virtual const uint GetVertexCount() override {mVertices.size();} ;
-    virtual std::vector<uint>GetIndices() override;
+    virtual std::vector<glm::vec3>GetVerticesInWorldSpace() const override;
+    virtual const glm::uint GetVertexCount() const override;
+    virtual std::vector<glm::uint>GetIndices() const override;
     
     struct Utils
     {

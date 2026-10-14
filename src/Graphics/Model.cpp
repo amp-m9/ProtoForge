@@ -220,34 +220,52 @@ void PFModel::AddMeshesToModel(const std::vector<PFMeshCreationInfo>& MeshInfoAr
                 }
             }
         }
-
-        mMeshes.push_back(new PFMesh(MeshInfo.mVertices, MeshInfo.mIndices, Textures));
+        PFMesh* Mesh = new PFMesh(MeshInfo.mVertices, MeshInfo.mIndices, Textures);
+        mMeshes.push_back(Mesh);
+        Mesh->SetParent(this);
     }
 }
 
-std::vector<glm::vec3> PFModel::GetVerticesInWorldSpace()
+std::vector<glm::vec3> PFModel::GetVerticesInWorldSpace() const
 {
     std::vector<glm::vec3> Vertices;
     for (auto mesh:mMeshes)
     {
-        auto MeshVertices = mesh->GetVerticesInWorldSpace();
-        Vertices.insert(Vertices.end(), MeshVertices.begin(), MeshVertices.end());
+        if(mesh)
+        {
+            auto MeshVertices = mesh->GetVerticesInWorldSpace();
+            Vertices.insert(Vertices.end(), MeshVertices.begin(), MeshVertices.end());
+        }
     }
     return Vertices;
 }
 
-std::vector<uint> PFModel::GetIndices()
+const glm::uint PFModel::GetVertexCount() const
 {
-    std::vector<uint> Indices;
-    uint Offset = 0;
+    glm::uint Total = 0;
     for(auto& Mesh : mMeshes)
     {
         if(Mesh)
         {
-            std::vector<uint> ChildIndices = Mesh->GetIndices();
-            Offset += Mesh->GetVertexCount();
-            std::for_each(ChildIndices.begin() , ChildIndices.end(), [Offset](uint &i){ i += Offset; });
+            Total += Mesh->GetVertexCount();
+        }
+    }
+    
+    return Total;
+}
+
+std::vector<glm::uint> PFModel::GetIndices() const
+{
+    std::vector<glm::uint> Indices;
+    glm::uint Offset = 0;
+    for(auto& Mesh : mMeshes)
+    {
+        if(Mesh)
+        {
+            std::vector<glm::uint> ChildIndices = Mesh->GetIndices();
+            std::for_each(ChildIndices.begin() , ChildIndices.end(), [Offset](glm::uint &i){ i += Offset; });
             Indices.insert(Indices.end(), ChildIndices.begin(), ChildIndices.end());
+            Offset += Mesh->GetVertexCount();
         }
     }
     

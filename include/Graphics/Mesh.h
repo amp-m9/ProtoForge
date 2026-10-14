@@ -44,12 +44,11 @@ public:
     virtual void UpdateBounds() override;
     void UpdateBounds(const glm::mat4& Transform);
 
-    virtual std::vector<glm::vec3>GetVerticesInWorldSpace() override;
-    virtual const uint GetVertexCount() override;
-    virtual std::vector<uint>GetIndices() override;
-    virtual const glm::mat4 GetWorldTransform() override;
+    virtual std::vector<glm::vec3>GetVerticesInWorldSpace() const override;
+    virtual const glm::uint GetVertexCount() const override;
+    virtual std::vector<glm::uint>GetIndices() const override;
+    virtual const glm::mat4 GetWorldTransform() const override;
     const PFModel* GetParent(){ return mParent;};
-    
     
 public:
     std::vector<PFVertex> mVertices;
@@ -58,7 +57,7 @@ public:
     unsigned int mVAO;
 
 private:
-    PFModel* mParent;
+    PFModel* mParent = nullptr;
     void SetupMesh();
     unsigned int mVBO, mEBO;
     unsigned int mBoundsVAO, mBoundsVBO;

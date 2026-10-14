@@ -49,7 +49,7 @@ void PFObject3D::UpdateTransformMatrix()
     mLocalTransform = glm::scale(mLocalTransform, mScale);
 }
 
-const glm::mat4 PFObject3D::GetWorldTransform()
+const glm::mat4 PFObject3D::GetWorldTransform() const
 {
     return mLocalTransform;
 }
